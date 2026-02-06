@@ -10,7 +10,6 @@ import CategorySection from "../components/draft/CategorySection";
 import DraftTimer from "../components/draft/DraftTimer";
 import GamePhaseIndicator from "../components/common/GamePhaseIndicator";
 
-const MAX_PER_CATEGORY = 2;
 const MAX_TOTAL = 10;
 
 export default function Draft() {
@@ -60,11 +59,6 @@ export default function Draft() {
         toast.error("Maximum 10 brands. Remove one first.");
         return prev;
       }
-      const catCount = brands.filter(b => prev.includes(b.id) && b.category === brand.category).length;
-      if (catCount >= MAX_PER_CATEGORY) {
-        toast.error(`Max ${MAX_PER_CATEGORY} per category reached.`);
-        return prev;
-      }
       return [...prev, brand.id];
     });
   };
@@ -100,9 +94,6 @@ export default function Draft() {
 
   const totalSelected = selectedIds.length;
   const isComplete = totalSelected === MAX_TOTAL;
-  const allCategoriesFilled = categories.every(cat => {
-    return brands.filter(b => selectedIds.includes(b.id) && b.category === cat).length === MAX_PER_CATEGORY;
-  });
 
   if (!user) return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
 
@@ -115,12 +106,12 @@ export default function Draft() {
             <h1 className="text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
               Commercial Draft
             </h1>
-            <p className="text-white/50 mt-1">Pick your 10 brands — 2 per category</p>
+            <p className="text-white/50 mt-1">Pick your 10 favorite brands</p>
           </div>
           <div className="flex items-center gap-3">
             {gameState?.draft_ends_at && !locked && (
               <DraftTimer endsAt={gameState.draft_ends_at} onExpired={() => {
-                if (allCategoriesFilled) lockMutation.mutate();
+                if (isComplete) lockMutation.mutate();
               }} />
             )}
             <GamePhaseIndicator currentPhase={gameState?.phase || "drafting"} />
@@ -158,7 +149,6 @@ export default function Draft() {
                 brands={catBrands}
                 selectedIds={selectedIds}
                 onToggle={handleToggle}
-                maxPerCategory={MAX_PER_CATEGORY}
               />
             );
           })}
@@ -169,13 +159,13 @@ export default function Draft() {
           <div className="fixed bottom-0 left-0 right-0 p-4 bg-gray-950/90 backdrop-blur-xl border-t border-white/10 z-40">
             <div className="max-w-7xl mx-auto flex items-center justify-between">
               <div>
-                {!allCategoriesFilled && (
+                {!isComplete && (
                   <p className="text-amber-400 text-sm flex items-center gap-1.5">
                     <AlertCircle className="w-4 h-4" />
-                    Select 2 brands per category
+                    Select {MAX_TOTAL - totalSelected} more brand{MAX_TOTAL - totalSelected !== 1 && 's'}
                   </p>
                 )}
-                {allCategoriesFilled && (
+                {isComplete && (
                   <p className="text-green-400 text-sm flex items-center gap-1.5">
                     <CheckCircle className="w-4 h-4" />
                     Ready to lock in!
@@ -184,7 +174,7 @@ export default function Draft() {
               </div>
               <Button
                 onClick={() => lockMutation.mutate()}
-                disabled={!allCategoriesFilled || lockMutation.isPending}
+                disabled={!isComplete || lockMutation.isPending}
                 className="h-12 px-8 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold text-lg disabled:opacity-30 shadow-lg shadow-purple-500/20"
               >
                 {lockMutation.isPending ? (

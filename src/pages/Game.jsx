@@ -15,11 +15,28 @@ export default function Game() {
   const [user, setUser] = useState(null);
   const [showRating, setShowRating] = useState(null);
   const [activeTab, setActiveTab] = useState("leaderboard");
+  const [notification, setNotification] = useState(null);
   const queryClient = useQueryClient();
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => base44.auth.redirectToLogin());
   }, []);
+
+  // Real-time subscription for brand updates
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+      if (event.type === "update" && event.data.is_airing) {
+        // Show notification when a brand starts airing
+        setNotification(event.data);
+        queryClient.invalidateQueries({ queryKey: ["brands"] });
+        
+        // Auto-dismiss notification after 5 seconds
+        setTimeout(() => setNotification(null), 5000);
+      }
+    });
+
+    return unsubscribe;
+  }, [queryClient]);
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
@@ -138,6 +155,42 @@ export default function Game() {
 
   return (
     <div className="min-h-screen bg-gray-950 text-white">
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {notification && (
+          <motion.div
+            initial={{ opacity: 0, y: -100 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -100 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md w-full mx-4"
+          >
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-red-500 to-orange-500 border-2 border-white/20 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  <img src={notification.logo_url} alt={notification.brand_name} className="w-10 h-10 object-contain" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-bold text-white text-sm uppercase tracking-wider flex items-center gap-2">
+                    <Tv className="w-4 h-4" /> Commercial Alert!
+                  </p>
+                  <p className="text-white font-bold">{notification.brand_name}</p>
+                  <p className="text-white/80 text-sm">{notification.title}</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setNotification(null);
+                    setShowRating(notification);
+                  }}
+                  className="px-4 py-2 rounded-xl bg-white text-red-600 font-bold text-sm whitespace-nowrap hover:bg-white/90 transition-colors"
+                >
+                  Rate Now
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">

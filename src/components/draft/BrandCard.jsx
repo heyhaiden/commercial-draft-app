@@ -22,39 +22,43 @@ const categoryAccents = {
 export default function BrandCard({ brand, isSelected, onToggle, disabled, showRating }) {
   return (
     <motion.button
-      whileHover={!disabled ? { scale: 1.03 } : {}}
-      whileTap={!disabled ? { scale: 0.97 } : {}}
+      whileHover={!disabled ? { scale: 1.05, rotate: 1 } : {}}
+      whileTap={!disabled ? { scale: 0.95 } : {}}
       onClick={() => !disabled && onToggle?.(brand)}
       className={cn(
-        "relative group w-full rounded-2xl border backdrop-blur-xl p-4 transition-all duration-300 text-left",
-        "bg-gradient-to-br",
+        "relative group w-full aspect-square rounded-3xl border backdrop-blur-xl p-4 transition-all duration-300 text-center flex flex-col items-center justify-center",
+        "bg-gradient-to-br shadow-xl",
         categoryGradients[brand.category] || categoryGradients["Other"],
-        isSelected && "ring-2 ring-white shadow-lg shadow-white/10",
+        isSelected && "ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/20 animate-pulse",
         disabled && !isSelected && "opacity-40 cursor-not-allowed",
-        !disabled && "cursor-pointer hover:shadow-lg hover:shadow-white/5"
+        !disabled && "cursor-pointer hover:shadow-2xl hover:shadow-white/10"
       )}
     >
       {isSelected && (
-        <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full bg-green-500 flex items-center justify-center shadow-lg z-10">
-          <Check className="w-4 h-4 text-white" strokeWidth={3} />
-        </div>
+        <motion.div 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1, rotate: 360 }}
+          className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-2xl z-10"
+        >
+          <Check className="w-5 h-5 text-white" strokeWidth={3} />
+        </motion.div>
       )}
 
-      <div className="flex items-center gap-3">
-        <div className="w-12 h-12 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0">
+      <div className="flex flex-col items-center gap-3 w-full">
+        <div className="w-20 h-20 rounded-2xl bg-white/95 flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
           <img
             src={brand.logo_url}
             alt={brand.brand_name}
-            className="w-10 h-10 object-contain"
+            className="w-16 h-16 object-contain"
             onError={(e) => {
               e.target.style.display = "none";
-              e.target.parentElement.innerHTML = `<span class="text-lg font-bold text-gray-700">${brand.brand_name?.[0] || "?"}</span>`;
+              e.target.parentElement.innerHTML = `<span class="text-2xl font-bold text-gray-700">${brand.brand_name?.[0] || "?"}</span>`;
             }}
           />
         </div>
-        <div className="min-w-0 flex-1">
-          <h3 className="font-bold text-white text-sm truncate">{brand.brand_name}</h3>
-          <p className="text-white/60 text-xs truncate mt-0.5">{brand.title}</p>
+        <div className="w-full">
+          <h3 className="font-bold text-white text-sm leading-tight mb-1">{brand.brand_name}</h3>
+          <p className="text-white/60 text-xs leading-tight line-clamp-2">{brand.title}</p>
         </div>
       </div>
 
