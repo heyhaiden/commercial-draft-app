@@ -109,26 +109,6 @@ export default function Home() {
           )}
         </motion.div>
 
-        {/* Stats */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="grid grid-cols-3 gap-3 mb-12"
-        >
-          {[
-            { icon: Users, label: "Players", value: uniquePlayers },
-            { icon: Star, label: "Brands", value: "36" },
-            { icon: Trophy, label: "Max Points", value: "900+" },
-          ].map(({ icon: Icon, label, value }) => (
-            <div key={label} className="text-center p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-              <Icon className="w-5 h-5 text-purple-400 mx-auto mb-2" />
-              <p className="text-2xl font-bold">{value}</p>
-              <p className="text-white/40 text-xs">{label}</p>
-            </div>
-          ))}
-        </motion.div>
-
         {/* How It Works */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
