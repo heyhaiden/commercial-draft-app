@@ -6,7 +6,7 @@ import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
 import { Tv, Trophy, Star, ArrowRight, Users, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import GamePhaseIndicator from "../components/common/GamePhaseIndicator";
+
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -48,7 +48,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-hidden">
+    <div className="min-h-screen bg-gray-950 text-white overflow-hidden pb-20 md:pb-0">
       {/* Background */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px]" />
@@ -57,13 +57,6 @@ export default function Home() {
       </div>
 
       <div className="relative max-w-4xl mx-auto px-4 py-8">
-        {/* Phase Indicator */}
-        {gameState && (
-          <div className="flex justify-center mb-8">
-            <GamePhaseIndicator currentPhase={gameState.phase} />
-          </div>
-        )}
-
         {/* Hero */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}

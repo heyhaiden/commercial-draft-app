@@ -22,30 +22,35 @@ const categoryAccents = {
 export default function BrandCard({ brand, isSelected, onToggle, disabled, showRating }) {
   return (
     <motion.button
-      whileHover={!disabled ? { scale: 1.05, rotate: 1 } : {}}
-      whileTap={!disabled ? { scale: 0.95 } : {}}
+      whileTap={{ scale: 0.95 }}
       onClick={() => !disabled && onToggle?.(brand)}
       className={cn(
-        "relative group w-full aspect-square rounded-3xl border backdrop-blur-xl p-4 transition-all duration-300 text-center flex flex-col items-center justify-center",
-        "bg-gradient-to-br shadow-xl",
+        "relative w-full aspect-square rounded-3xl border backdrop-blur-xl p-4 transition-all duration-200 text-center flex flex-col items-center justify-center",
+        "bg-gradient-to-br shadow-lg",
         categoryGradients[brand.category] || categoryGradients["Other"],
-        isSelected && "ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/20 animate-pulse",
+        isSelected && "ring-4 ring-yellow-400 shadow-2xl shadow-yellow-400/30",
         disabled && !isSelected && "opacity-40 cursor-not-allowed",
-        !disabled && "cursor-pointer hover:shadow-2xl hover:shadow-white/10"
+        !disabled && "cursor-pointer active:scale-95"
       )}
     >
       {isSelected && (
-        <motion.div 
-          initial={{ scale: 0 }}
-          animate={{ scale: 1, rotate: 360 }}
-          className="absolute -top-3 -right-3 w-10 h-10 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shadow-2xl z-10"
-        >
-          <Check className="w-5 h-5 text-white" strokeWidth={3} />
-        </motion.div>
+        <>
+          <div className="absolute inset-0 bg-black/40 rounded-3xl z-[5]" />
+          <motion.div 
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
+            className="absolute inset-0 flex items-center justify-center z-10"
+          >
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-yellow-400 to-orange-500 flex items-center justify-center shadow-2xl">
+              <Check className="w-8 h-8 text-white" strokeWidth={3} />
+            </div>
+          </motion.div>
+        </>
       )}
 
-      <div className="flex flex-col items-center gap-3 w-full">
-        <div className="w-20 h-20 rounded-2xl bg-white/95 flex items-center justify-center overflow-hidden shadow-lg group-hover:scale-110 transition-transform duration-300">
+      <div className="flex flex-col items-center gap-3 w-full h-full justify-center">
+        <div className="w-20 h-20 rounded-2xl bg-white/95 flex items-center justify-center overflow-hidden shadow-lg flex-shrink-0">
           <img
             src={brand.logo_url}
             alt={brand.brand_name}

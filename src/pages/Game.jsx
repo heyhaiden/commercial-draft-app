@@ -9,7 +9,7 @@ import RatingPopup from "../components/rating/RatingPopup";
 import LeaderboardRow from "../components/leaderboard/LeaderboardRow";
 import MyLineup from "../components/lineup/MyLineup";
 import PostGameStats from "../components/stats/PostGameStats";
-import GamePhaseIndicator from "../components/common/GamePhaseIndicator";
+
 
 export default function Game() {
   const [user, setUser] = useState(null);
@@ -154,7 +154,7 @@ export default function Game() {
   if (!user) return <div className="min-h-screen bg-gray-950 flex items-center justify-center"><div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-gray-950 text-white pb-20 md:pb-0">
       {/* Notification Toast */}
       <AnimatePresence>
         {notification && (
@@ -193,11 +193,11 @@ export default function Game() {
 
       <div className="max-w-7xl mx-auto px-4 py-6">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
-          <h1 className="text-3xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
-            Commercial Draft
+        <div className="mb-6">
+          <h1 className="text-2xl font-black bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
+            Live Game
           </h1>
-          <GamePhaseIndicator currentPhase={gameState?.phase || "live"} />
+          <p className="text-white/50 text-sm mt-1">Rate ads as they air</p>
         </div>
 
         {/* Airing Alert */}
