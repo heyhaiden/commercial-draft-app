@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function Rate() {
   const [showRulesPopup, setShowRulesPopup] = useState(false);
@@ -42,6 +43,7 @@ export default function Rate() {
   const rateMutation = useMutation({
     mutationFn: async ({ brandId, stars }) => {
       const brand = brands.find(b => b.id === brandId);
+      toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
       await base44.entities.Rating.create({
         user_email: user.email,
         brand_id: brandId,

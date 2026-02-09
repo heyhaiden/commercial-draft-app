@@ -7,6 +7,7 @@ import { Search, Clock, CheckCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { motion } from "framer-motion";
 
 export default function RoomDraft() {
   const [searchParams] = useSearchParams();
@@ -119,6 +120,9 @@ export default function RoomDraft() {
     mutationFn: async (brand) => {
       const brandToPick = brand || selectedBrand;
       if (!brandToPick) return;
+      
+      // Visual feedback animation
+      toast.success(`🎯 ${brandToPick.brand_name} locked in!`);
 
       const pickNumber = roomPicks.length + 1;
       const currentRound = Math.floor(pickNumber / sortedPlayers.length) + 1;
@@ -147,7 +151,6 @@ export default function RoomDraft() {
       });
 
       setSelectedBrand(null);
-      toast.success("Pick locked in!");
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roomPicks"] });
@@ -222,8 +225,11 @@ export default function RoomDraft() {
             const isPicked = pickedBrandIds.has(brand.id);
 
             return (
-              <button
+              <motion.button
                 key={brand.id}
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                whileTap={isMyTurn && !isPicked ? { scale: 0.98 } : {}}
                 onClick={() => isMyTurn && !isPicked && setSelectedBrand(brand)}
                 disabled={!isMyTurn || isPicked}
                 className={cn(
@@ -251,7 +257,7 @@ export default function RoomDraft() {
                   <p className="text-xs text-[#a4a498]">{brand.category}</p>
                 </div>
                 {isPicked && <Lock className="w-4 h-4 text-[#a4a498]" />}
-              </button>
+              </motion.button>
             );
           })}
         </div>

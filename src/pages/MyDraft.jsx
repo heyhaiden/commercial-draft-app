@@ -3,22 +3,30 @@ import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Settings } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
+import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
+import OnboardingTooltip from "@/components/common/OnboardingTooltip";
+import { motion } from "framer-motion";
 
 export default function MyDraft() {
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
+    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
+    }
   }, []);
 
-  const { data: brands = [] } = useQuery({
+  const { data: brands = [], isLoading: brandsLoading } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
   });
 
-  const { data: myPicks = [] } = useQuery({
+  const { data: myPicks = [], isLoading: picksLoading } = useQuery({
     queryKey: ["myPicks", user?.email],
     queryFn: () => base44.entities.DraftPick.filter({ user_email: user.email, locked: true }),
     enabled: !!user,
@@ -101,22 +109,27 @@ export default function MyDraft() {
               </div>
               
               <div className="space-y-2">
-                {catPicks.map(pick => {
-                  const brand = brands.find(b => b.id === pick.brand_id);
-                  if (!brand) return null;
+                {picksLoading ? (
+                  Array.from({ length: 2 }).map((_, idx) => <BrandCardSkeleton key={idx} />)
+                ) : (
+                  catPicks.map(pick => {
+                    const brand = brands.find(b => b.id === pick.brand_id);
+                    if (!brand) return null;
 
-                  const isAiring = brand.is_airing;
-                  const isPending = !brand.aired && !brand.is_airing;
+                    const isAiring = brand.is_airing;
+                    const isPending = !brand.aired && !brand.is_airing;
 
-                  return (
-                    <div
-                      key={pick.id}
-                      className={`rounded-2xl border p-4 flex items-center gap-3 ${
-                        isAiring
-                          ? "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20 border-[#f4c542]"
-                          : "bg-[#2d2d1e] border-[#5a5a4a]/30"
-                      }`}
-                    >
+                    return (
+                      <motion.div
+                        key={pick.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className={`rounded-2xl border p-4 flex items-center gap-3 ${
+                          isAiring
+                            ? "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20 border-[#f4c542] animate-pulse"
+                            : "bg-[#2d2d1e] border-[#5a5a4a]/30"
+                        }`}
+                      >
                       <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center flex-shrink-0 p-2">
                         <img
                           src={brand.logo_url}
@@ -155,9 +168,10 @@ export default function MyDraft() {
                           </>
                         )}
                       </div>
-                    </div>
+                    </motion.div>
                   );
-                })}
+                  })
+                )}
               </div>
             </div>
           );
@@ -169,6 +183,11 @@ export default function MyDraft() {
         onClose={() => setShowScorecard(false)}
         playerData={playerData}
         brands={brands}
+      />
+      
+      <OnboardingTooltip
+        show={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
       />
     </div>
   );
