@@ -208,8 +208,8 @@ export default function Admin() {
                 brand.aired ? "bg-green-500/10 border-green-400/30 opacity-60" :
                 "bg-[#2d2d1e] border-[#5a5a4a]/30"
               )}>
-                <div className="w-8 h-8 rounded-lg bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0">
-                  <img src={brand.logo_url} alt={brand.brand_name} className="w-6 h-6 object-contain"
+                <div className="w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0 p-2">
+                  <img src={brand.logo_url} alt={brand.brand_name} className="w-full h-full object-contain"
                     onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-gray-700">${brand.brand_name?.[0]}</span>`; }}
                   />
                 </div>

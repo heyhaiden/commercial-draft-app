@@ -37,6 +37,28 @@ export default function Lobby() {
   const isHost = user && room && user.email === room.host_email;
   const myPlayer = players.find(p => p.user_email === user?.email);
 
+  const createDummyUserMutation = useMutation({
+    mutationFn: async () => {
+      const dummyName = `Player${Math.floor(Math.random() * 1000)}`;
+      const dummyEmail = `dummy${Date.now()}@test.com`;
+      const dummyIcon = `icon${Math.floor(Math.random() * 6) + 1}`;
+
+      await base44.entities.Player.create({
+        room_code: roomCode,
+        user_email: dummyEmail,
+        display_name: dummyName,
+        icon: dummyIcon,
+        ready: true,
+        turn_order: players.length,
+      });
+
+      toast.success("Dummy player added!");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["players"] });
+    },
+  });
+
   useEffect(() => {
     if (room?.draft_starts_at) {
       const interval = setInterval(() => {
@@ -64,6 +86,12 @@ export default function Lobby() {
 
   const startDraftMutation = useMutation({
     mutationFn: async () => {
+      // Assign turn orders
+      const shuffled = [...players].sort(() => Math.random() - 0.5);
+      for (let i = 0; i < shuffled.length; i++) {
+        await base44.entities.Player.update(shuffled[i].id, { turn_order: i });
+      }
+
       const startTime = new Date(Date.now() + 15000).toISOString();
       await base44.entities.GameRoom.update(room.id, {
         status: "drafting",
@@ -172,15 +200,24 @@ export default function Lobby() {
 
         {/* Action Button */}
         {isHost ? (
-          <Button
-            onClick={() => startDraftMutation.mutate()}
-            disabled={players.length < 2 || startDraftMutation.isPending}
-            className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
-          >
-            <Rocket className="w-5 h-5" />
-            START DRAFT
-            <Rocket className="w-5 h-5" />
-          </Button>
+          <div className="space-y-3">
+            <Button
+              onClick={() => createDummyUserMutation.mutate()}
+              disabled={createDummyUserMutation.isPending}
+              className="w-full h-12 rounded-2xl bg-[#4a4a3a]/40 hover:bg-[#5a5a4a]/40 text-white font-medium text-sm"
+            >
+              + Add Test Player
+            </Button>
+            <Button
+              onClick={() => startDraftMutation.mutate()}
+              disabled={players.length < 2 || startDraftMutation.isPending}
+              className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
+            >
+              <Rocket className="w-5 h-5" />
+              START DRAFT
+              <Rocket className="w-5 h-5" />
+            </Button>
+          </div>
         ) : (
           <Button
             onClick={() => toggleReadyMutation.mutate()}

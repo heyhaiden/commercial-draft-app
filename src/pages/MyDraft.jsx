@@ -2,9 +2,12 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useQuery } from "@tanstack/react-query";
 import { Settings } from "lucide-react";
+import SeasonScorecard from "@/components/game/SeasonScorecard";
 
 export default function MyDraft() {
   const [user, setUser] = useState(null);
+  const [showScorecard, setShowScorecard] = useState(false);
+  const [hasShownScorecard, setHasShownScorecard] = useState(false);
 
   useEffect(() => {
     base44.auth.me().then(setUser).catch(() => {});
@@ -37,6 +40,25 @@ export default function MyDraft() {
   const myRank = sortedUsers.findIndex(([email]) => email === user?.email) + 1;
 
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
+
+  // Check if game is complete
+  const allBrandsRated = brands.every(b => !b.aired || b.total_ratings > 0);
+  const isGameComplete = brands.filter(b => b.aired).length > 0 && allBrandsRated;
+
+  useEffect(() => {
+    if (isGameComplete && !hasShownScorecard) {
+      setShowScorecard(true);
+      setHasShownScorecard(true);
+    }
+  }, [isGameComplete, hasShownScorecard]);
+
+  const playerIcon = "🏈"; // Get from player data
+  const playerData = user ? {
+    displayName: user.full_name?.replace(" ", "") || "Player",
+    icon: playerIcon,
+    rank: myRank,
+    picks: myPicks,
+  } : null;
 
   return (
     <div className="min-h-screen bg-[#1d1d0e] text-white pb-24">
@@ -144,6 +166,13 @@ export default function MyDraft() {
           );
         })}
       </div>
+
+      <SeasonScorecard
+        show={showScorecard}
+        onClose={() => setShowScorecard(false)}
+        playerData={playerData}
+        brands={brands}
+      />
     </div>
   );
 }
