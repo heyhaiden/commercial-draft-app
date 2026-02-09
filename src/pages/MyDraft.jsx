@@ -117,7 +117,7 @@ export default function MyDraft() {
                           : "bg-[#2d2d1e] border-[#5a5a4a]/30"
                       }`}
                     >
-                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center flex-shrink-0 p-2">
+                      <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center flex-shrink-0 p-2">
                         <img
                           src={brand.logo_url}
                           alt={brand.brand_name}
