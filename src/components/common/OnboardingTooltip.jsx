@@ -5,24 +5,24 @@ import { Button } from "@/components/ui/button";
 
 const ONBOARDING_STEPS = [
   {
-    title: "Welcome to Commercial Draft! 🏈",
-    description: "Fantasy football meets the Super Bowl! Draft your favorite commercials and compete with friends based on viewer ratings.",
-    highlight: "How to Play",
+    title: "Draft Complete! 🏈",
+    description: "You've selected your 5 commercials. Now it's time to watch the game and rate ads as they air!",
+    highlight: "Game Time",
   },
   {
-    title: "Draft Your Lineup",
-    description: "Choose 5 brands across different categories. Pick wisely - your score depends on how viewers rate each commercial!",
-    highlight: "Draft Phase",
+    title: "Live Rating System",
+    description: "When a commercial airs during the game, you'll get a popup to rate it from 1-5 stars. Rate quickly before time runs out!",
+    highlight: "Rate Ads",
   },
   {
-    title: "Rate & Score",
-    description: "During the game, rate commercials as they air (1-5 stars). Your picks earn points based on average viewer ratings.",
-    highlight: "Live Scoring",
+    title: "Points & Scoring",
+    description: "Points = (Average Rating × 20) - 10. A 5-star ad gets 90 points, while a 1-star gets only 10 points.",
+    highlight: "Scoring",
   },
   {
-    title: "Climb the Leaderboard",
-    description: "Track your rank in real-time and compete to become the ultimate commercial scout. May the best drafter win!",
-    highlight: "Competition",
+    title: "Track the Competition",
+    description: "Check the Rank page to see live standings. Your score updates after each commercial is rated by all players.",
+    highlight: "Leaderboard",
   },
 ];
 
