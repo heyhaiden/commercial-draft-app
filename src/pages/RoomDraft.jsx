@@ -306,31 +306,99 @@ export default function RoomDraft() {
               <p className="font-black text-lg">{currentTurnPlayer.display_name}</p>
             </div>
             {room.round_timer && (
-              <div className="text-center">
-                <Clock className="w-5 h-5 text-[#f4c542] mx-auto mb-1" />
-                <p className={`text-xs font-bold ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-[#a4a498]'}`}>
-                  {timeRemaining !== null ? `0:${String(timeRemaining).padStart(2, '0')}` : `0:${room.round_timer}`}
-                </p>
+              <div className="relative w-16 h-16 flex-shrink-0">
+                <svg className="w-16 h-16 transform -rotate-90">
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                    className="text-[#5a5a4a]/30"
+                  />
+                  <circle
+                    cx="32"
+                    cy="32"
+                    r="28"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                    fill="none"
+                    strokeDasharray={`${2 * Math.PI * 28}`}
+                    strokeDashoffset={`${2 * Math.PI * 28 * (1 - (timeRemaining || 0) / room.round_timer)}`}
+                    className={`transition-all duration-1000 ${timeRemaining <= 10 ? 'text-red-400' : 'text-[#f4c542]'}`}
+                    strokeLinecap="round"
+                  />
+                </svg>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <p className={`text-lg font-black ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-white'}`}>
+                    {timeRemaining !== null ? timeRemaining : room.round_timer}
+                  </p>
+                </div>
               </div>
             )}
           </div>
         </div>
 
+        {/* My Picks Section */}
+        {myPickedBrands.length > 0 && (
+          <div className="p-4 border-b border-[#5a5a4a]/30 bg-[#2d2d1e]">
+            <h3 className="text-xs font-bold text-[#a4a498] mb-2 uppercase tracking-wider">My Draft ({myPickedBrands.length}/5)</h3>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+              {roomPicks
+                .filter(p => p.user_email === user?.id)
+                .map(pick => {
+                  const brand = brands.find(b => b.id === pick.brand_id);
+                  if (!brand) return null;
+                  return (
+                    <div
+                      key={pick.id}
+                      className="flex-shrink-0 w-16 rounded-xl bg-green-500/10 border border-green-400/30 p-2 text-center"
+                    >
+                      <div className="w-10 h-10 mx-auto rounded-lg bg-white flex items-center justify-center p-1.5 mb-1">
+                        <img
+                          src={brand.logo_url}
+                          alt={brand.brand_name}
+                          className="w-full h-full object-contain"
+                          onError={(e) => {
+                            e.target.style.display = "none";
+                            e.target.parentElement.innerHTML = `<span class="font-bold text-gray-700 text-xs">${brand.brand_name?.[0]}</span>`;
+                          }}
+                        />
+                      </div>
+                      <p className="text-[9px] text-white font-bold truncate">{brand.brand_name}</p>
+                      <p className="text-[8px] text-green-400">R{pick.round}</p>
+                    </div>
+                  );
+                })}
+            </div>
+          </div>
+        )}
+
         {/* Category Filter */}
         <div className="p-4 border-b border-[#5a5a4a]/30">
+          <h3 className="text-xs font-bold text-[#a4a498] mb-2 uppercase tracking-wider">Filter by Category</h3>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            {["All Brands", "Tech", "Auto", "Food & Beverage", "Entertainment", "Other"].map(cat => (
+            {[
+              { name: "All Brands", emoji: "📦" },
+              { name: "Tech", emoji: "💻" },
+              { name: "Auto", emoji: "🚗" },
+              { name: "Food & Beverage", emoji: "🍔" },
+              { name: "Entertainment", emoji: "🎬" },
+              { name: "Other", emoji: "✨" }
+            ].map(({ name, emoji }) => (
               <button
-                key={cat}
-                onClick={() => setSearchTerm(cat === "All Brands" ? "" : cat)}
+                key={name}
+                onClick={() => setSearchTerm(name === "All Brands" ? "" : name)}
                 className={cn(
-                  "flex-shrink-0 px-4 py-2 rounded-full font-medium text-sm transition-all",
-                  (cat === "All Brands" && searchTerm === "") || searchTerm === cat
+                  "flex-shrink-0 px-4 py-2 rounded-full font-medium text-sm transition-all flex items-center gap-2",
+                  (name === "All Brands" && searchTerm === "") || searchTerm === name
                     ? "bg-gradient-to-r from-[#f4c542] to-[#d4a532] text-[#2d2d1e]"
                     : "bg-[#2d2d1e] text-[#a4a498] hover:text-white"
                 )}
               >
-                {cat}
+                <span>{emoji}</span>
+                {name}
               </button>
             ))}
           </div>
@@ -379,7 +447,15 @@ export default function RoomDraft() {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-white">{brand.brand_name}</p>
-                  <p className="text-xs text-[#a4a498]">{brand.category}</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <span className="text-xs">
+                      {brand.category === "Tech" ? "💻" : 
+                       brand.category === "Auto" ? "🚗" : 
+                       brand.category === "Food & Beverage" ? "🍔" : 
+                       brand.category === "Entertainment" ? "🎬" : "✨"}
+                    </span>
+                    <p className="text-xs text-[#a4a498]">{brand.category}</p>
+                  </div>
                   {isPicked && pickedPlayer && (
                     <p className="text-[10px] text-[#f4c542] mt-1">
                       {getPlayerIcon(pickedPlayer)} {pickedPlayer.display_name}
