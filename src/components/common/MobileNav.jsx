@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { ClipboardList, ThumbsUp, BarChart3 } from "lucide-react";
+import { ClipboardList, ThumbsUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export default function MobileNav() {
@@ -12,9 +12,9 @@ export default function MobileNav() {
   };
 
   const navItems = [
-    { label: "Draft", icon: ClipboardList, path: createPageUrl("MyDraft") },
+    { label: "My Picks", icon: ClipboardList, path: createPageUrl("MyDraft") },
     { label: "Rate", icon: ThumbsUp, path: createPageUrl("Rate") },
-    { label: "Rank", icon: BarChart3, path: createPageUrl("Leaderboard") },
+    { label: "Rank", icon: Trophy, path: createPageUrl("Leaderboard") },
   ];
 
   return (
