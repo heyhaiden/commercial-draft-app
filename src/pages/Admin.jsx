@@ -205,7 +205,10 @@ export default function Admin() {
     queryFn: () => base44.entities.Player.list("-created_date", 1000),
   });
 
-  const uniqueUsers = allPlayers.length;
+  // Filter to current room only
+  const currentRoomCode = rooms[0]?.room_code;
+  const currentRoomPlayers = allPlayers.filter(p => p.room_code === currentRoomCode);
+  const uniqueUsers = currentRoomPlayers.length;
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["gameRooms"],
