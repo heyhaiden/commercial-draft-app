@@ -13,6 +13,8 @@ export default function Admin() {
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -174,6 +176,16 @@ export default function Admin() {
     return matchesSearch && matchesFilter;
   });
 
+  const totalPages = Math.ceil(filteredBrands.length / itemsPerPage);
+  const paginatedBrands = filteredBrands.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filter]);
+
   const shareRoomCode = () => {
     if (rooms[0]?.room_code) {
       navigator.clipboard.writeText(rooms[0].room_code);
@@ -270,11 +282,11 @@ export default function Admin() {
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 mb-4">
             {brandsLoading ? (
               Array.from({ length: 5 }).map((_, idx) => <BrandCardSkeleton key={idx} />)
             ) : (
-              filteredBrands.map(brand => (
+              paginatedBrands.map(brand => (
               <div key={brand.id} className={cn(
                 "flex items-center gap-3 p-3 rounded-xl border transition-all",
                 brand.is_airing ? "bg-red-500/20 border-red-400/50" :
@@ -324,6 +336,64 @@ export default function Admin() {
               ))
             )}
           </div>
+
+          {/* Pagination */}
+          {!brandsLoading && totalPages > 1 && (
+            <div className="flex items-center justify-between pt-4 border-t border-[#5a5a4a]/30">
+              <p className="text-[#a4a498] text-sm">
+                Showing {(currentPage - 1) * itemsPerPage + 1}-{Math.min(currentPage * itemsPerPage, filteredBrands.length)} of {filteredBrands.length}
+              </p>
+              <div className="flex gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="rounded-lg"
+                >
+                  Previous
+                </Button>
+                <div className="flex gap-1">
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum;
+                    if (totalPages <= 5) {
+                      pageNum = i + 1;
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1;
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i;
+                    } else {
+                      pageNum = currentPage - 2 + i;
+                    }
+                    
+                    return (
+                      <button
+                        key={i}
+                        onClick={() => setCurrentPage(pageNum)}
+                        className={cn(
+                          "w-8 h-8 rounded-lg text-sm font-medium transition-all",
+                          currentPage === pageNum
+                            ? "bg-gradient-to-r from-[#f4c542] to-[#d4a532] text-[#2d2d1e]"
+                            : "bg-[#2d2d1e] text-[#a4a498] hover:text-white"
+                        )}
+                      >
+                        {pageNum}
+                      </button>
+                    );
+                  })}
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="rounded-lg"
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

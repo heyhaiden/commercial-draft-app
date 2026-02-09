@@ -175,28 +175,78 @@ export default function RoomDraft() {
   const currentTurnIcon = currentTurnPlayer.icon ? 
     ["🏈", "🏆", "⭐", "🔥", "⚡", "👑"][parseInt(currentTurnPlayer.icon.replace("icon", "")) - 1] : "👤";
 
+  const ICONS = ["🏈", "🏆", "⭐", "🔥", "⚡", "👑"];
+  const getPlayerIcon = (player) => {
+    if (!player?.icon) return "👤";
+    const iconIndex = parseInt(player.icon.replace("icon", "")) - 1;
+    return ICONS[iconIndex] || "👤";
+  };
+
+  const totalPicks = roomPicks.length;
+  const playersCount = sortedPlayers.length;
+  const currentRound = Math.floor(totalPicks / playersCount) + 1;
+
   return (
-    <div className="min-h-screen bg-[#3d3d2e] text-white pb-24">
+    <div className="min-h-screen bg-[#3d3d2e] text-white">
       <div className="max-w-md mx-auto">
+        {/* Draft Order Header */}
+        <div className="bg-[#2d2d1e] border-b border-[#5a5a4a]/30 p-4">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-white font-bold">Draft Order</h2>
+            <span className="text-[#a4a498] text-sm">Round {currentRound}/5</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {sortedPlayers.map((player, idx) => {
+              const isCurrent = currentTurnPlayer?.user_email === player.user_email;
+              const playerPicks = roomPicks.filter(p => p.user_email === player.user_email).length;
+              const hasCompleted = playerPicks >= 5;
+              
+              return (
+                <div
+                  key={player.id}
+                  className={cn(
+                    "flex-shrink-0 w-16 rounded-xl p-2 text-center transition-all",
+                    isCurrent && "bg-gradient-to-br from-[#f4c542]/30 to-[#d4a532]/30 border-2 border-[#f4c542] scale-110",
+                    !isCurrent && hasCompleted && "opacity-40",
+                    !isCurrent && !hasCompleted && "bg-[#3d3d2e]"
+                  )}
+                >
+                  <div className={cn(
+                    "text-2xl mb-1",
+                    isCurrent && "animate-bounce"
+                  )}>
+                    {getPlayerIcon(player)}
+                  </div>
+                  <p className="text-[10px] text-white font-bold truncate">{player.display_name}</p>
+                  <p className="text-[9px] text-[#a4a498]">{playerPicks}/5</p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Turn Banner */}
         <div className={cn(
           "p-4 border-b border-[#5a5a4a]/30",
           isMyTurn ? "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20" : "bg-[#2d2d1e]"
         )}>
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center text-2xl flex-shrink-0">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center text-2xl flex-shrink-0 relative">
               {currentTurnIcon}
+              {isMyTurn && (
+                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-[#2d2d1e] animate-pulse" />
+              )}
             </div>
             <div className="flex-1">
-              <p className="text-[#a4a498] text-xs">
-                {isMyTurn ? "YOUR TURN" : "CURRENT PICK"}
+              <p className="text-[#a4a498] text-xs font-bold">
+                {isMyTurn ? "🎯 YOUR TURN" : "CURRENT PICK"}
               </p>
               <p className="font-black text-lg">{currentTurnPlayer.display_name}</p>
             </div>
             {room.round_timer && (
               <div className="text-center">
                 <Clock className="w-5 h-5 text-[#f4c542] mx-auto mb-1" />
-                <p className={`text-xs font-bold ${timeRemaining <= 10 ? 'text-red-400' : 'text-[#a4a498]'}`}>
+                <p className={`text-xs font-bold ${timeRemaining <= 10 ? 'text-red-400 animate-pulse' : 'text-[#a4a498]'}`}>
                   {timeRemaining !== null ? `0:${String(timeRemaining).padStart(2, '0')}` : `0:${room.round_timer}`}
                 </p>
               </div>
