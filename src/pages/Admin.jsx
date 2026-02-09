@@ -107,10 +107,10 @@ export default function Admin() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-950 text-white">
+    <div className="min-h-screen bg-[#3d3d2e] text-white">
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center gap-3 mb-8">
-          <Settings className="w-6 h-6 text-purple-400" />
+          <Settings className="w-6 h-6 text-[#f4c542]" />
           <h1 className="text-2xl font-black text-white">Admin Control Panel</h1>
         </div>
 
@@ -122,16 +122,16 @@ export default function Admin() {
             { label: "Aired", value: brands.filter(b => b.aired).length, icon: CheckCircle },
             { label: "Ratings", value: allRatings.length, icon: BarChart3 },
           ].map(({ label, value, icon: Icon }) => (
-            <div key={label} className="p-4 rounded-2xl bg-white/5 border border-white/10">
-              <Icon className="w-5 h-5 text-purple-400 mb-2" />
+            <div key={label} className="p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30">
+              <Icon className="w-5 h-5 text-[#f4c542] mb-2" />
               <p className="text-2xl font-bold">{value}</p>
-              <p className="text-white/40 text-xs">{label}</p>
+              <p className="text-[#a4a498] text-xs">{label}</p>
             </div>
           ))}
         </div>
 
         {/* Game Phase Control */}
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10 mb-6">
+        <div className="p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 mb-6">
           <h2 className="font-bold text-lg mb-4">Game Phase</h2>
           <div className="flex flex-wrap gap-2">
             {["pre_draft", "drafting", "pre_game", "live", "post_game"].map(phase => (
@@ -140,8 +140,8 @@ export default function Admin() {
                 variant={gameState?.phase === phase ? "default" : "outline"}
                 onClick={() => phase === "drafting" ? startDraftMutation.mutate() : updatePhaseMutation.mutate(phase)}
                 className={cn(
-                  "rounded-xl",
-                  gameState?.phase === phase && "bg-purple-600 hover:bg-purple-500"
+                  "rounded-xl border-[#5a5a4a]/30",
+                  gameState?.phase === phase && "bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e]"
                 )}
               >
                 {phase.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase())}
@@ -151,15 +151,15 @@ export default function Admin() {
         </div>
 
         {/* Commercial Air Control */}
-        <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
+        <div className="p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30">
           <h2 className="font-bold text-lg mb-4">Commercial Control</h2>
           <div className="space-y-2 max-h-[60vh] overflow-y-auto">
             {brands.map(brand => (
               <div key={brand.id} className={cn(
                 "flex items-center gap-3 p-3 rounded-xl border transition-all",
-                brand.is_airing ? "bg-red-500/10 border-red-400/30" :
-                brand.aired ? "bg-green-500/5 border-green-400/20 opacity-60" :
-                "bg-white/5 border-white/10"
+                brand.is_airing ? "bg-red-500/20 border-red-400/50" :
+                brand.aired ? "bg-green-500/10 border-green-400/30 opacity-60" :
+                "bg-[#2d2d1e] border-[#5a5a4a]/30"
               )}>
                 <div className="w-8 h-8 rounded-lg bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0">
                   <img src={brand.logo_url} alt={brand.brand_name} className="w-6 h-6 object-contain"
@@ -179,7 +179,7 @@ export default function Admin() {
                       <Square className="w-3 h-3 mr-1" /> Stop
                     </Button>
                   ) : !brand.aired ? (
-                    <Button size="sm" onClick={() => airCommercialMutation.mutate(brand.id)} className="rounded-lg bg-red-600 hover:bg-red-500">
+                    <Button size="sm" onClick={() => airCommercialMutation.mutate(brand.id)} className="rounded-lg bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e]">
                       <Play className="w-3 h-3 mr-1" /> Air
                     </Button>
                   ) : (
