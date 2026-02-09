@@ -257,6 +257,46 @@ export default function Admin() {
           )}
         </div>
 
+        {/* Scoring Simulation */}
+        <div className="rounded-2xl bg-blue-500/20 border border-blue-400/30 p-4 mb-4">
+          <h3 className="font-bold text-sm mb-2 text-blue-400">Test Scoring</h3>
+          <Button
+            onClick={async () => {
+              const airedBrands = brands.filter(b => b.aired);
+              if (airedBrands.length === 0) {
+                toast.error("No aired brands to simulate");
+                return;
+              }
+              const randomBrand = airedBrands[Math.floor(Math.random() * airedBrands.length)];
+              const randomStars = Math.floor(Math.random() * 5) + 1;
+              
+              await base44.entities.Rating.create({
+                user_email: `sim_${Date.now()}@test.com`,
+                brand_id: randomBrand.id,
+                brand_name: randomBrand.brand_name,
+                stars: randomStars,
+              });
+              
+              const brandRatings = await base44.entities.Rating.filter({ brand_id: randomBrand.id });
+              const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
+              const finalAvg = totalStars / brandRatings.length;
+              const finalPoints = Math.round(finalAvg * 20) - 10;
+              
+              await base44.entities.Brand.update(randomBrand.id, {
+                average_rating: Math.round(finalAvg * 100) / 100,
+                total_ratings: brandRatings.length,
+                points: finalPoints,
+              });
+              
+              queryClient.invalidateQueries();
+              toast.success(`Simulated ${randomStars}⭐ rating for ${randomBrand.brand_name}`);
+            }}
+            className="w-full h-10 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-sm"
+          >
+            Simulate Random Score
+          </Button>
+        </div>
+
         {/* Commercial Air Control */}
         <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-4">
           <h2 className="font-bold text-lg mb-4">Commercial Control</h2>

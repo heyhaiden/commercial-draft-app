@@ -24,6 +24,11 @@ export default function Leaderboard() {
     queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
   });
 
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ["allPlayers"],
+    queryFn: () => base44.entities.Player.list("-created_date", 1000),
+  });
+
   // Get all unique players from picks
   const userScores = {};
   allPicks.forEach(pick => {
@@ -68,6 +73,15 @@ export default function Leaderboard() {
     picks: myPicks,
   } : null;
 
+  const ICONS = [
+    { id: "icon1", emoji: "🏈" },
+    { id: "icon2", emoji: "🏆" },
+    { id: "icon3", emoji: "⭐" },
+    { id: "icon4", emoji: "🔥" },
+    { id: "icon5", emoji: "⚡" },
+    { id: "icon6", emoji: "👑" },
+  ];
+
   return (
     <div className="min-h-screen bg-[#1d1d0e] text-white pb-24">
       <div className="max-w-md mx-auto px-4 py-6">
@@ -86,10 +100,12 @@ export default function Leaderboard() {
               const heights = ["h-32", "h-40", "h-28"];
               const colors = ["from-gray-400/20", "from-[#f4c542]/20", "from-orange-600/20"];
               const isMe = entry.email === user?.id;
+              const player = allPlayers.find(p => p.user_email === entry.email);
+              const playerIcon = player?.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
               return (
                 <div key={entry.email} className="flex-1 flex flex-col items-center">
                   <div className={`w-16 h-16 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center mb-2 relative ${isMe ? 'ring-4 ring-green-400' : ''}`}>
-                    <span className="text-2xl">👤</span>
+                    <span className="text-2xl">{playerIcon}</span>
                     {actualRank === 1 && <Crown className="absolute -top-2 -right-2 w-6 h-6 text-[#f4c542]" />}
                   </div>
                   <div className={`w-full ${heights[idx]} rounded-t-2xl bg-gradient-to-b ${colors[idx]} to-transparent border border-[#5a5a4a]/30 border-b-0 flex flex-col items-center justify-center`}>
@@ -128,6 +144,8 @@ export default function Leaderboard() {
               {leaderboard.slice(3).map((entry, idx) => {
             const rank = idx + 4;
             const isMe = entry.email === user?.id;
+            const player = allPlayers.find(p => p.user_email === entry.email);
+            const playerIcon = player?.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
             return (
               <div
                 key={entry.email}
@@ -144,7 +162,7 @@ export default function Leaderboard() {
                   <TrendingUp className="w-4 h-4" />
                 </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
-                  <span className="text-lg">👤</span>
+                  <span className="text-lg">{playerIcon}</span>
                 </div>
                 <p className="flex-1 font-bold">{isMe ? `You (${entry.name})` : entry.name}</p>
                 <div className="text-right">

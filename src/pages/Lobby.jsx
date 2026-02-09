@@ -207,24 +207,15 @@ export default function Lobby() {
 
         {/* Action Button */}
         {isHost ? (
-          <div className="space-y-3">
-            <Button
-              onClick={() => createDummyUserMutation.mutate()}
-              disabled={createDummyUserMutation.isPending}
-              className="w-full h-12 rounded-2xl bg-[#4a4a3a]/40 hover:bg-[#5a5a4a]/40 text-white font-medium text-sm"
-            >
-              + Add Test Player
-            </Button>
-            <Button
-              onClick={() => startDraftMutation.mutate()}
-              disabled={players.filter(p => p.user_email !== room.host_email).length < 2 || startDraftMutation.isPending}
-              className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
-            >
-              <Rocket className="w-5 h-5" />
-              START DRAFT
-              <Rocket className="w-5 h-5" />
-            </Button>
-          </div>
+          <Button
+            onClick={() => startDraftMutation.mutate()}
+            disabled={players.filter(p => p.user_email !== room.host_email).length < 2 || startDraftMutation.isPending}
+            className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
+          >
+            <Rocket className="w-5 h-5" />
+            START DRAFT
+            <Rocket className="w-5 h-5" />
+          </Button>
         ) : (
           <Button
             onClick={() => toggleReadyMutation.mutate()}

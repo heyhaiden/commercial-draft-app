@@ -121,7 +121,7 @@ export default function Rate() {
     <div className="min-h-screen bg-[#1d1d0e] text-white pb-24">
       <div className="max-w-md mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-black">Ratings</h1>
+          <h1 className="text-2xl font-black">RATE ADS</h1>
           <button 
             onClick={() => setShowRulesPopup(true)}
             className="w-9 h-9 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center"
