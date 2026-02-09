@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/utils/guestAuth";
+import { getUserIdentity } from "@/lib/guestAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Settings } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";

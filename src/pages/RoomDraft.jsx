@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { getUserIdentity } from "@/utils/guestAuth";
+import { getUserIdentity } from "@/lib/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Clock, CheckCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";

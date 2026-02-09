@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { getUserIdentity, setGuestName } from "@/utils/guestAuth";
+import { getUserIdentity, setGuestName } from "@/lib/guestAuth";
 import { motion } from "framer-motion";
 import { ArrowLeft, Edit, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
