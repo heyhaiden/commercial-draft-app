@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/lib/guestAuth";
+import { getUserIdentity } from "@/components/utils/guestAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Search, TrendingUp, TrendingDown, Crown } from "lucide-react";
 

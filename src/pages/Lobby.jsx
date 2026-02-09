@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getUserIdentity } from "@/components/utils/guestAuth";
 import { ArrowLeft, Settings, CheckCircle, Clock, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -36,8 +37,8 @@ export default function Lobby() {
   });
 
   const room = rooms[0];
-  const isHost = user && room && user.email === room.host_email;
-  const myPlayer = players.find(p => p.user_email === user?.email);
+  const isHost = user && room && user.id === room.host_email;
+  const myPlayer = players.find(p => p.user_email === user?.id);
 
   const createDummyUserMutation = useMutation({
     mutationFn: async () => {
@@ -176,7 +177,7 @@ export default function Lobby() {
           <div className="space-y-2">
             {players.filter(p => p.user_email !== room.host_email).map((player, idx) => {
               const icon = player.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
-              const isMe = player.user_email === user?.email;
+              const isMe = player.user_email === user?.id;
               return (
                 <div
                   key={player.id}
