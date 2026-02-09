@@ -20,7 +20,7 @@ export default function Home() {
       {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-b from-[#3d3d2e] via-[#2d2d1e] to-[#1d1d0e] pointer-events-none" />
       
-      <div className="relative max-w-md mx-auto px-6 py-8 flex flex-col items-center justify-center min-h-screen">
+      <div className="relative max-w-md mx-auto px-6 py-8 flex flex-col items-center justify-center min-h-screen text-center">
         {/* Live Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
