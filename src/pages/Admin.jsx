@@ -171,32 +171,30 @@ export default function Admin() {
     },
   });
 
-  const resetGameMutation = useMutation({
+  const closeGameMutation = useMutation({
     mutationFn: async () => {
-      const allRatings = await base44.entities.Rating.list("-created_date", 1000);
-      for (const rating of allRatings) {
-        await base44.entities.Rating.delete(rating.id);
+      const currentRoom = rooms[0];
+      if (!currentRoom) return;
+      
+      // Delete all players in this room
+      const roomPlayers = await base44.entities.Player.filter({ room_code: currentRoom.room_code });
+      for (const player of roomPlayers) {
+        await base44.entities.Player.delete(player.id);
       }
-      const allDraftPicks = await base44.entities.DraftPick.list("-created_date", 1000);
-      for (const pick of allDraftPicks) {
-        await base44.entities.DraftPick.delete(pick.id);
+      
+      // Delete all draft picks in this room
+      const roomPicks = await base44.entities.RoomDraftPick.filter({ room_code: currentRoom.room_code });
+      for (const pick of roomPicks) {
+        await base44.entities.RoomDraftPick.delete(pick.id);
       }
-      for (const brand of brands) {
-        await base44.entities.Brand.update(brand.id, {
-          is_airing: false,
-          aired: false,
-          average_rating: 0,
-          total_ratings: 0,
-          points: 0,
-        });
-      }
-      if (gameState) {
-        await base44.entities.GameState.update(gameState.id, { phase: "pre_draft" });
-      }
+      
+      // Delete the room
+      await base44.entities.GameRoom.delete(currentRoom.id);
     },
     onSuccess: () => {
       queryClient.invalidateQueries();
-      toast.success("Game reset complete");
+      toast.success("Game closed");
+      navigate(-1);
     },
   });
 
@@ -404,19 +402,19 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Reset Button */}
+        {/* Close Game Button */}
         <div className="mt-6 mb-6">
           <Button
             onClick={() => {
-              if (confirm("Are you sure you want to reset the entire game? This will delete all ratings, picks, and reset all brands.")) {
-                resetGameMutation.mutate();
+              if (confirm("Are you sure you want to close this game? This will delete the room and all players.")) {
+                closeGameMutation.mutate();
               }
             }}
-            disabled={resetGameMutation.isPending}
+            disabled={closeGameMutation.isPending || !rooms[0]}
             variant="destructive"
             className="w-full h-12 rounded-2xl"
           >
-            {resetGameMutation.isPending ? "Resetting..." : "Reset Entire Game"}
+            {closeGameMutation.isPending ? "Closing..." : "Close Game"}
           </Button>
         </div>
       </div>
