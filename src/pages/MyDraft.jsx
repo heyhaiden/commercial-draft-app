@@ -21,6 +21,21 @@ export default function MyDraft() {
     enabled: !!user,
   });
 
+  const { data: allPicks = [] } = useQuery({
+    queryKey: ["allPicks"],
+    queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
+  });
+
+  // Calculate rank
+  const userScores = {};
+  allPicks.forEach(pick => {
+    if (!userScores[pick.user_email]) userScores[pick.user_email] = 0;
+    const brand = brands.find(b => b.id === pick.brand_id);
+    if (brand?.aired) userScores[pick.user_email] += brand.points || 0;
+  });
+  const sortedUsers = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
+  const myRank = sortedUsers.findIndex(([email]) => email === user?.email) + 1;
+
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
 
   return (
@@ -48,8 +63,8 @@ export default function MyDraft() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-[#a4a498] text-xs">Team Rank</p>
-              <p className="text-white text-3xl font-black">#4,203</p>
+              <p className="text-[#a4a498] text-xs">Current Rank</p>
+              <p className="text-white text-3xl font-black">#{myRank || "-"}</p>
             </div>
           </div>
         </div>
@@ -83,14 +98,14 @@ export default function MyDraft() {
                           : "bg-[#2d2d1e] border-[#5a5a4a]/30"
                       }`}
                     >
-                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center flex-shrink-0">
+                      <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center flex-shrink-0 p-2">
                         <img
                           src={brand.logo_url}
                           alt={brand.brand_name}
-                          className="w-12 h-12 object-contain"
+                          className="w-full h-full object-contain"
                           onError={(e) => {
                             e.target.style.display = "none";
-                            e.target.parentElement.innerHTML = `<span class="font-bold text-gray-700 text-xl">${brand.brand_name?.[0]}</span>`;
+                            e.target.parentElement.innerHTML = `<span class="font-bold text-gray-700 text-lg">${brand.brand_name?.[0]}</span>`;
                           }}
                         />
                       </div>

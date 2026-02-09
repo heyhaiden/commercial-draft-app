@@ -143,7 +143,7 @@ export default function Rate() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/80"
+            className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/80"
           >
             <motion.div
               initial={{ scale: 0.9, y: 20 }}
@@ -157,8 +157,8 @@ export default function Rate() {
 
               <div className="p-6">
                 <div className="flex justify-center mb-4">
-                  <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center border-4 border-[#f4c542]">
-                    <img src={showRating.logo_url} alt={showRating.brand_name} className="w-20 h-20 object-contain" />
+                  <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center border-4 border-[#f4c542] p-3">
+                    <img src={showRating.logo_url} alt={showRating.brand_name} className="w-full h-full object-contain" />
                   </div>
                 </div>
 

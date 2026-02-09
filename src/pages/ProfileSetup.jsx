@@ -87,7 +87,7 @@ export default function ProfileSetup() {
         </div>
 
         <h2 className="text-4xl font-black italic text-center mb-4">PICK YOUR PLAYER</h2>
-        <p className="text-[#a4a498] text-center mb-12">Create your persona for the draft.</p>
+        <p className="text-[#a4a498] text-center mb-8">Create your persona for the draft.</p>
 
         {/* Display Name */}
         <div className="mb-8">
@@ -131,14 +131,6 @@ export default function ProfileSetup() {
               </button>
             ))}
           </div>
-        </div>
-
-        {/* Info */}
-        <div className="rounded-2xl bg-[#f4c542]/10 border border-[#f4c542]/20 p-4 mb-12 flex gap-3">
-          <div className="text-[#f4c542] text-xl flex-shrink-0">ℹ️</div>
-          <p className="text-sm text-[#d4d4c8]">
-            Your selected icon and name will be visible to everyone in the draft room. Choose wisely!
-          </p>
         </div>
 
         {/* Save Button */}

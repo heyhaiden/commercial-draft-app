@@ -78,14 +78,14 @@ export default function CreateRoom() {
           <div className="rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-6 mb-6">
             <div className="text-center mb-4">
               <p className="text-[#f4c542] text-sm font-bold tracking-wider mb-2">YOUR ROOM CODE</p>
-              <p className="text-6xl font-black tracking-wider">{roomCode}</p>
+              <p className="text-6xl font-black tracking-wider select-text">{roomCode}</p>
             </div>
             <Button
               onClick={shareCode}
-              className="w-full h-12 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-[#f4c542] font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2"
+              className="w-full h-12 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2"
             >
               <Share2 className="w-4 h-4" />
-              Share Code
+              Copy Code to Share
             </Button>
           </div>
 

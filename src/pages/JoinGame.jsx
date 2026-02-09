@@ -82,61 +82,61 @@ export default function JoinGame() {
         </div>
 
         {/* Icon */}
-        <div className="flex justify-center mb-12">
-          <div className="w-16 h-16 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 flex items-center justify-center">
-            <Bookmark className="w-7 h-7 text-[#f4c542]" />
+        <div className="flex justify-center mb-6">
+          <div className="w-14 h-14 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 flex items-center justify-center">
+            <Bookmark className="w-6 h-6 text-[#f4c542]" />
           </div>
         </div>
 
         {/* Title */}
-        <h2 className="text-4xl font-black italic text-center mb-4">ENTER ROOM CODE</h2>
-        <p className="text-[#a4a498] text-center mb-12">Ask the host for the 4-digit game ID</p>
+        <h2 className="text-3xl font-black italic text-center mb-3">ENTER ROOM CODE</h2>
+        <p className="text-[#a4a498] text-center mb-8">Ask the host for the 4-digit game ID</p>
 
         {/* Code Display */}
-        <div className="mb-12">
-          <div className="h-20 rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 flex items-center justify-center px-8 gap-3">
+        <div className="mb-8">
+          <div className="h-16 rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 flex items-center justify-center px-6 gap-2">
             {[0, 1, 2, 3].map((i) => (
-              <span key={i} className="text-5xl font-bold text-white">
+              <span key={i} className="text-4xl font-bold text-white">
                 {code[i] || ""}
               </span>
             ))}
-            <div className="w-1 h-12 bg-[#f4c542] animate-pulse ml-2" />
+            <div className="w-1 h-10 bg-[#f4c542] animate-pulse ml-2" />
           </div>
         </div>
 
         {/* Number Pad */}
-        <div className="grid grid-cols-3 gap-3 mb-8">
+        <div className="grid grid-cols-3 gap-2 mb-6">
           {buttons.map(({ num, letters }) => (
             <button
               key={num}
               onClick={() => handleKeyPress(num)}
-              className="aspect-square rounded-3xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex flex-col items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+              className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex flex-col items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
             >
-              <span className="text-3xl font-bold">{num}</span>
-              {letters && <span className="text-xs text-[#a4a498] mt-1">{letters}</span>}
+              <span className="text-2xl font-bold">{num}</span>
+              {letters && <span className="text-[10px] text-[#a4a498] mt-0.5">{letters}</span>}
             </button>
           ))}
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-3 gap-3 mb-12">
+        <div className="grid grid-cols-3 gap-2 mb-8">
           <button
             onClick={handleClear}
-            className="aspect-square rounded-3xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+            className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <span className="text-xs text-[#a4a498]">CLEAR</span>
+            <span className="text-[10px] text-[#a4a498]">CLEAR</span>
           </button>
           <button
             onClick={() => handleKeyPress("0")}
-            className="aspect-square rounded-3xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+            className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <span className="text-3xl font-bold">0</span>
+            <span className="text-2xl font-bold">0</span>
           </button>
           <button
             onClick={handleBackspace}
-            className="aspect-square rounded-3xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+            className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </button>
         </div>
 

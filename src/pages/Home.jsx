@@ -63,22 +63,6 @@ export default function Home() {
           The fantasy league for the world's most expensive ads.
         </motion.p>
 
-        {/* Video Trailer Placeholder */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="w-full aspect-video rounded-3xl bg-gradient-to-b from-[#4a4a3a]/20 to-[#2a2a1a]/20 border border-[#5a5a4a]/30 flex items-center justify-center mb-8 overflow-hidden relative"
-        >
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508362526420-9cf96cdfd7b3?w=800')] bg-cover bg-center opacity-20" />
-          <div className="relative w-14 h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-            <Play className="w-5 h-5 text-white ml-1" fill="white" />
-          </div>
-          <div className="absolute bottom-3 left-0 right-0 text-center">
-            <p className="text-[#a4a498] text-xs font-medium tracking-wider">WATCH TRAILER</p>
-          </div>
-        </motion.div>
-
         {/* Join Button */}
         {authChecked && (
           <motion.div
