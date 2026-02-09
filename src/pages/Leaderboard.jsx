@@ -63,8 +63,8 @@ export default function Leaderboard() {
                 <div className="rounded-3xl bg-gradient-to-r from-[#4a4a3a]/40 to-[#3a3a2a]/40 border border-[#5a5a4a]/30 p-4 relative overflow-hidden">
                   <div className="absolute top-4 left-4 bg-[#f4c542] text-[#2d2d1e] text-xs font-bold px-3 py-1 rounded-full">#1 RATED</div>
                   <div className="mt-8 flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center flex-shrink-0">
-                      <img src={topBrand.logo_url} alt={topBrand.brand_name} className="w-16 h-16 object-contain" />
+                    <div className="w-20 h-20 rounded-xl bg-white flex items-center justify-center flex-shrink-0 p-2">
+                      <img src={topBrand.logo_url} alt={topBrand.brand_name} className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1">
                       <p className="font-black text-2xl text-white">{topBrand.brand_name} - {topBrand.title}</p>
