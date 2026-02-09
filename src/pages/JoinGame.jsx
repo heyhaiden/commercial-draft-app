@@ -71,7 +71,7 @@ export default function JoinGame() {
 
   return (
     <div className="min-h-screen bg-[#3d3d2e] text-white pb-20 flex flex-col">
-      <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
+      <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
@@ -82,18 +82,18 @@ export default function JoinGame() {
         </div>
 
         {/* Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 flex items-center justify-center">
-            <Bookmark className="w-7 h-7 text-[#f4c542]" />
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 flex items-center justify-center">
+            <Bookmark className="w-6 h-6 text-[#f4c542]" />
           </div>
         </div>
 
         {/* Title */}
-        <h2 className="text-3xl font-black italic text-center mb-3">ENTER ROOM CODE</h2>
-        <p className="text-[#a4a498] text-center text-sm mb-8">Ask the host for the 4-digit game ID</p>
+        <h2 className="text-2xl font-black italic text-center mb-2">ENTER ROOM CODE</h2>
+        <p className="text-[#a4a498] text-center text-sm mb-6">Ask the host for the 4-digit game ID</p>
 
         {/* Code Display */}
-        <div className="mb-8">
+        <div className="mb-6">
           <div className="h-16 rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 flex items-center justify-center px-6 gap-2">
             {[0, 1, 2, 3].map((i) => (
               <span key={i} className="text-4xl font-bold text-white">
@@ -119,7 +119,7 @@ export default function JoinGame() {
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-3 gap-2 mb-8">
+        <div className="grid grid-cols-3 gap-2 mb-auto">
           <button
             onClick={handleClear}
             className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
@@ -141,7 +141,7 @@ export default function JoinGame() {
         </div>
 
         {/* Join Button */}
-        <div className="mt-auto">
+        <div className="mt-6">
           <Button
             onClick={handleJoin}
             disabled={code.length !== 4}

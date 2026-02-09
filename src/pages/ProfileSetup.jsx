@@ -71,7 +71,7 @@ export default function ProfileSetup() {
 
   return (
     <div className="min-h-screen bg-[#3d3d2e] text-white pb-20 flex flex-col">
-      <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
+      <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col">
         <div className="flex items-center justify-between mb-6">
           <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
             <ArrowLeft className="w-4 h-4" />
@@ -80,18 +80,18 @@ export default function ProfileSetup() {
           <div className="w-10" />
         </div>
 
-        <div className="flex justify-center mb-6">
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
-            <Edit className="w-8 h-8 text-[#2d2d1e]" />
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
+            <Edit className="w-7 h-7 text-[#2d2d1e]" />
           </div>
         </div>
 
-        <h2 className="text-3xl font-black italic text-center mb-3">PICK YOUR PLAYER</h2>
-        <p className="text-[#a4a498] text-center text-sm mb-8">Create your persona for the draft.</p>
+        <h2 className="text-2xl font-black italic text-center mb-2">PICK YOUR PLAYER</h2>
+        <p className="text-[#a4a498] text-center text-sm mb-6">Create your persona for the draft.</p>
 
         {/* Display Name */}
         <div className="mb-6">
-          <label className="text-xs font-bold text-[#a4a498] mb-2 block tracking-wider">DISPLAY NAME</label>
+          <label className="text-sm font-bold text-[#a4a498] mb-2 block tracking-wider">DISPLAY NAME</label>
           <div className="relative">
             <Input
               value={displayName}
@@ -99,7 +99,7 @@ export default function ProfileSetup() {
               placeholder="Enter your name"
               className="h-14 rounded-2xl bg-white border-0 text-[#2d2d1e] text-base font-medium pl-12"
             />
-            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-xl">👤</div>
+            <div className="absolute left-4 top-1/2 -translate-y-1/2 text-xl">👤</div>
             {displayName && (
               <div className="absolute right-4 top-1/2 -translate-y-1/2">
                 <Check className="w-6 h-6 text-green-500" />
@@ -110,8 +110,8 @@ export default function ProfileSetup() {
 
         {/* Icon Selection */}
         <div className="mb-auto">
-          <div className="flex items-center justify-between mb-3">
-            <label className="text-xs font-bold text-[#a4a498] tracking-wider">SELECT ICON</label>
+          <div className="flex items-center justify-between mb-4">
+            <label className="text-sm font-bold text-[#a4a498] tracking-wider">SELECT ICON</label>
           </div>
           <div className="grid grid-cols-3 gap-4">
             {ICONS.map(icon => (
@@ -119,7 +119,7 @@ export default function ProfileSetup() {
                 key={icon.id}
                 onClick={() => !icon.locked && setSelectedIcon(icon.id)}
                 disabled={icon.locked}
-                className={`aspect-square rounded-2xl flex items-center justify-center text-4xl transition-all ${
+                className={`aspect-square rounded-2xl flex items-center justify-center text-5xl transition-all ${
                   selectedIcon === icon.id
                     ? "bg-gradient-to-br from-[#f4c542] to-[#d4a532] border-4 border-[#2d2d1e]"
                     : icon.locked

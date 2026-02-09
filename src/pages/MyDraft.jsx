@@ -66,9 +66,6 @@ export default function MyDraft() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-black">My Drafted Lineup</h1>
-          <button className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
-            <Settings className="w-5 h-5" />
-          </button>
         </div>
 
         {/* Status Banner */}
