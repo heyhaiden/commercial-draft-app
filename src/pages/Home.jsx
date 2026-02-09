@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { useQuery } from "@tanstack/react-query";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { Tv, Trophy, Star, ArrowRight, Users, Zap } from "lucide-react";
+import { Trophy, Play, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -16,163 +14,126 @@ export default function Home() {
     base44.auth.me().then(u => { setUser(u); setAuthChecked(true); }).catch(() => setAuthChecked(true));
   }, []);
 
-  const { data: gameStates = [] } = useQuery({
-    queryKey: ["gameState"],
-    queryFn: () => base44.entities.GameState.list(),
-    refetchInterval: 5000,
-  });
-
-  const { data: allPicks = [] } = useQuery({
-    queryKey: ["allPicks"],
-    queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
-  });
-
-  const gameState = gameStates[0];
-  const uniquePlayers = new Set(allPicks.map(p => p.user_email)).size;
-  const myPicks = user ? allPicks.filter(p => p.user_email === user.email) : [];
-  const hasLocked = myPicks.length > 0;
-
-  const getActionLink = () => {
-    if (!user) return null;
-    if (gameState?.phase === "live" || gameState?.phase === "post_game") return createPageUrl("Game");
-    if (hasLocked) return createPageUrl("Game");
-    return createPageUrl("Draft");
-  };
-
-  const getActionText = () => {
-    if (!user) return "Sign In to Play";
-    if (gameState?.phase === "live") return "Join Game →";
-    if (gameState?.phase === "post_game") return "See Results →";
-    if (hasLocked) return "View My Lineup →";
-    return "Start Drafting →";
-  };
-
   return (
-    <div className="min-h-screen bg-gray-950 text-white overflow-hidden pb-20 md:pb-0">
-      {/* Background */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div className="absolute top-1/4 -left-32 w-96 h-96 bg-purple-600/20 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 -right-32 w-96 h-96 bg-pink-600/20 rounded-full blur-[120px]" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-amber-500/10 rounded-full blur-[150px]" />
-      </div>
-
-      <div className="relative max-w-4xl mx-auto px-4 py-8">
-        {/* Hero */}
+    <div className="min-h-screen bg-[#3d3d2e] text-white overflow-hidden pb-20 md:pb-0">
+      {/* Background gradient */}
+      <div className="fixed inset-0 bg-gradient-to-b from-[#3d3d2e] via-[#2d2d1e] to-[#1d1d0e] pointer-events-none" />
+      
+      <div className="relative max-w-md mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-screen">
+        {/* Live Badge */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-          className="text-center mb-12"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 backdrop-blur-sm mb-8"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/10 border border-white/10 mb-6">
-            <Tv className="w-4 h-4 text-purple-400" />
-            <span className="text-sm text-white/70">Super Bowl LX • 2026</span>
-          </div>
-
-          <h1 className="text-5xl sm:text-7xl font-black leading-tight mb-4">
-            <span className="bg-gradient-to-r from-purple-400 via-pink-400 to-amber-400 bg-clip-text text-transparent">
-              Commercial
-            </span>
-            <br />
-            <span className="text-white">Draft</span>
-          </h1>
-
-          <p className="text-lg text-white/50 max-w-md mx-auto mb-8">
-            Draft the brands. Rate the ads. Win the Big Game.
-          </p>
-
-          {authChecked && (
-            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              {user ? (
-                <Link to={getActionLink()}>
-                  <Button className="h-14 px-10 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold text-lg shadow-xl shadow-purple-500/20">
-                    {getActionText()}
-                  </Button>
-                </Link>
-              ) : (
-                <Button
-                  onClick={() => base44.auth.redirectToLogin()}
-                  className="h-14 px-10 rounded-2xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 font-bold text-lg shadow-xl shadow-purple-500/20"
-                >
-                  Sign In to Play
-                </Button>
-              )}
-
-              {user?.role === "admin" && (
-                <Link to={createPageUrl("Admin")}>
-                  <Button variant="outline" className="h-14 px-8 rounded-2xl border-white/20 text-white hover:bg-white/10">
-                    Admin Panel
-                  </Button>
-                </Link>
-              )}
-            </div>
-          )}
+          <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+          <span className="text-sm text-[#d4d4c8] font-medium tracking-wide">SUPER BOWL LVIII SEASON</span>
         </motion.div>
 
-        {/* How It Works */}
+        {/* App Icon */}
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.2 }}
+          className="w-32 h-32 rounded-[32px] bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center shadow-2xl mb-8 border-4 border-[#3d3d2e]"
+        >
+          <Trophy className="w-16 h-16 text-[#3d3d2e]" />
+        </motion.div>
+
+        {/* Title */}
+        <motion.h1
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          className="text-5xl font-black text-center mb-4 leading-tight"
+        >
+          <span className="italic text-white">COMM</span>
+          <span className="italic text-[#f4c542]">ERCIAL</span>
+          <br />
+          <span className="italic text-white">DRAFT</span>
+        </motion.h1>
+
+        {/* Subtitle */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-[#a4a498] text-center mb-12 max-w-xs"
+        >
+          The fantasy league for the world's most expensive ads.
+        </motion.p>
+
+        {/* Video Trailer Placeholder */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="mb-12"
+          className="w-full aspect-video rounded-3xl bg-gradient-to-b from-[#4a4a3a]/20 to-[#2a2a1a]/20 border border-[#5a5a4a]/30 flex items-center justify-center mb-12 overflow-hidden relative"
         >
-          <h2 className="text-center text-xl font-bold mb-6 text-white/80">How It Works</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {[
-              { step: "01", title: "Draft 10 Brands", desc: "Pick 2 brands per category you think will have the best Super Bowl ads.", icon: "🎯" },
-              { step: "02", title: "Rate Commercials", desc: "As ads air during the game, rate each one 1-5 stars. You can't rate your own brands.", icon: "⭐" },
-              { step: "03", title: "Win the Draft", desc: "Points are based on crowd ratings of your brands. Highest score wins!", icon: "🏆" },
-            ].map(({ step, title, desc, icon }) => (
-              <div key={step} className="p-5 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-sm">
-                <span className="text-3xl mb-3 block">{icon}</span>
-                <p className="text-purple-400 text-xs font-bold uppercase tracking-wider mb-1">Step {step}</p>
-                <h3 className="font-bold text-white mb-1">{title}</h3>
-                <p className="text-white/40 text-sm">{desc}</p>
-              </div>
-            ))}
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508362526420-9cf96cdfd7b3?w=800')] bg-cover bg-center opacity-20" />
+          <div className="relative w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+            <Play className="w-6 h-6 text-white ml-1" fill="white" />
+          </div>
+          <div className="absolute bottom-4 left-0 right-0 text-center">
+            <p className="text-[#a4a498] text-sm font-medium tracking-wider">WATCH TRAILER</p>
           </div>
         </motion.div>
 
-        {/* Scoring */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.7 }}
-          className="p-6 rounded-3xl bg-gradient-to-br from-white/5 to-white/[0.02] border border-white/10 backdrop-blur-sm"
+        {/* Join Button */}
+        {authChecked && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.6 }}
+            className="w-full"
+          >
+            {user ? (
+              <Link to={createPageUrl("JoinGame")} className="block">
+                <Button className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg shadow-xl border-2 border-[#2d2d1e]/20 flex items-center justify-center gap-3">
+                  <Trophy className="w-6 h-6" />
+                  JOIN THE GAME
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                </Button>
+              </Link>
+            ) : (
+              <Button
+                onClick={() => base44.auth.redirectToLogin()}
+                className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg shadow-xl border-2 border-[#2d2d1e]/20"
+              >
+                SIGN IN TO PLAY
+              </Button>
+            )}
+          </motion.div>
+        )}
+
+        {/* Admin Link */}
+        {user?.role === "admin" && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-6"
+          >
+            <Link to={createPageUrl("CreateRoom")}>
+              <button className="flex items-center gap-2 text-[#a4a498] hover:text-white transition-colors text-sm">
+                <Shield className="w-4 h-4" />
+                Admin & Host Access
+              </button>
+            </Link>
+          </motion.div>
+        )}
+
+        {/* Version */}
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="mt-8 text-[#6a6a5a] text-xs"
         >
-          <h2 className="text-center text-xl font-bold mb-4 text-white/80">Scoring</h2>
-          <div className="grid grid-cols-5 gap-2 mb-4">
-            {[
-              { stars: 1, pts: 10, color: "from-red-500/20 to-red-500/5" },
-              { stars: 2, pts: 30, color: "from-orange-500/20 to-orange-500/5" },
-              { stars: 3, pts: 50, color: "from-yellow-500/20 to-yellow-500/5" },
-              { stars: 4, pts: 70, color: "from-green-500/20 to-green-500/5" },
-              { stars: 5, pts: 90, color: "from-purple-500/20 to-purple-500/5" },
-            ].map(({ stars, pts, color }) => (
-              <div key={stars} className={`text-center p-3 rounded-xl bg-gradient-to-b ${color} border border-white/5`}>
-                <div className="flex justify-center gap-0.5 mb-1">
-                  {Array.from({ length: stars }).map((_, i) => (
-                    <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                  ))}
-                </div>
-                <p className="text-white font-bold text-lg">{pts}</p>
-                <p className="text-white/30 text-xs">pts</p>
-              </div>
-            ))}
-          </div>
-          <div className="flex flex-col sm:flex-row gap-2 text-center text-sm">
-            <div className="flex-1 p-2 rounded-lg bg-amber-500/10 border border-amber-400/20">
-              <Zap className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-              <p className="text-amber-400 font-medium">+25 bonus</p>
-              <p className="text-white/40 text-xs">if you drafted the top-rated ad</p>
-            </div>
-            <div className="flex-1 p-2 rounded-lg bg-blue-500/10 border border-blue-400/20">
-              <Zap className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-              <p className="text-blue-400 font-medium">+15 bonus</p>
-              <p className="text-white/40 text-xs">for brands with multiple ads</p>
-            </div>
-          </div>
-        </motion.div>
+          VERSION 2.4.0 • BUILD 892
+        </motion.p>
       </div>
     </div>
   );
