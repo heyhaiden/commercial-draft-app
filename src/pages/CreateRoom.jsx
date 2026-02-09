@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getUserIdentity } from "@/components/utils/guestAuth";
 import { motion } from "framer-motion";
 import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -23,12 +24,12 @@ export default function CreateRoom() {
   const createRoom = async () => {
     setCreating(true);
     try {
-      const user = await base44.auth.me();
+      const userIdentity = await getUserIdentity(base44);
       const code = generateCode();
       
       await base44.entities.GameRoom.create({
         room_code: code,
-        host_email: user.email,
+        host_email: userIdentity.id,
         status: "lobby",
         max_players: maxPlayers,
         round_timer: roundTimer,

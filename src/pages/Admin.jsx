@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getUserIdentity } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -17,12 +18,9 @@ export default function Admin() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    base44.auth.me().then(u => {
-      if (u.role !== "admin") {
-        window.location.href = "/";
-      }
-      setUser(u);
-    }).catch(() => base44.auth.redirectToLogin());
+    getUserIdentity(base44).then(identity => {
+      setUser(identity);
+    });
   }, []);
 
   const { data: brands = [], isLoading: brandsLoading } = useQuery({
