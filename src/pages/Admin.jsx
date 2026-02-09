@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tv, Play, Square, CheckCircle, Settings, Users, BarChart3, ArrowLeft, Loader2 } from "lucide-react";
+import { Play, Square, CheckCircle, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -14,6 +13,12 @@ export default function Admin() {
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
+  const [failedImages, setFailedImages] = useState(new Set());
+
+  // Safe image error handler - no XSS
+  const handleImageError = useCallback((brandId) => {
+    setFailedImages(prev => new Set([...prev, brandId]));
+  }, []);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -351,9 +356,16 @@ export default function Admin() {
                 "bg-[#2d2d1e] border-[#5a5a4a]/30"
               )}>
                 <div className="w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0 p-2">
-                  <img src={brand.logo_url} alt={brand.brand_name} className="w-full h-full object-contain"
-                    onError={(e) => { e.target.style.display = "none"; e.target.parentElement.innerHTML = `<span class="text-xs font-bold text-gray-700">${brand.brand_name?.[0]}</span>`; }}
-                  />
+                  {failedImages.has(brand.id) ? (
+                    <span className="text-xs font-bold text-gray-700">{brand.brand_name?.[0]}</span>
+                  ) : (
+                    <img
+                      src={brand.logo_url}
+                      alt={brand.brand_name}
+                      className="w-full h-full object-contain"
+                      onError={() => handleImageError(brand.id)}
+                    />
+                  )}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-white font-medium text-sm truncate">{brand.brand_name}</p>

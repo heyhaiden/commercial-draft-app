@@ -3,7 +3,6 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getUserIdentity } from "@/components/utils/guestAuth";
-import { motion } from "framer-motion";
 import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -32,16 +31,40 @@ export default function CreateRoom() {
     checkActiveRoom();
   }, []);
 
+  // Generate 6-character alphanumeric code (2.1M+ combinations)
+  // Excludes confusing characters: 0/O, 1/I/L
   const generateCode = () => {
-    return Math.floor(1000 + Math.random() * 9000).toString();
+    const chars = "ABCDEFGHJKMNPQRSTUVWXYZ23456789";
+    let code = "";
+    for (let i = 0; i < 6; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return code;
+  };
+
+  // Check if room code already exists
+  const isCodeUnique = async (code) => {
+    const existing = await base44.entities.GameRoom.filter({ room_code: code });
+    return existing.length === 0;
+  };
+
+  // Generate unique code with collision retry
+  const generateUniqueCode = async (maxAttempts = 10) => {
+    for (let i = 0; i < maxAttempts; i++) {
+      const code = generateCode();
+      if (await isCodeUnique(code)) {
+        return code;
+      }
+    }
+    throw new Error("Failed to generate unique room code");
   };
 
   const createRoom = async () => {
     setCreating(true);
     try {
       const userIdentity = await getUserIdentity(base44);
-      const code = generateCode();
-      
+      const code = await generateUniqueCode();
+
       await base44.entities.GameRoom.create({
         room_code: code,
         host_email: userIdentity.id,
@@ -54,7 +77,7 @@ export default function CreateRoom() {
       setRoomCode(code);
       toast.success("Room created!");
     } catch (error) {
-      toast.error("Failed to create room");
+      toast.error(error.message || "Failed to create room");
       setCreating(false);
     }
   };

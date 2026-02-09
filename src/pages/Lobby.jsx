@@ -106,14 +106,28 @@ export default function Lobby() {
     },
   });
 
+  // Proper Fisher-Yates shuffle for fair turn order
+  const shuffleArray = (array) => {
+    const shuffled = [...array];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  };
+
   const startDraftMutation = useMutation({
     mutationFn: async () => {
-      // Assign turn orders only to non-host players
+      // Assign turn orders only to non-host players with fair shuffle
       const nonHostPlayers = players.filter(p => p.user_email !== room.host_email);
-      const shuffled = [...nonHostPlayers].sort(() => Math.random() - 0.5);
-      for (let i = 0; i < shuffled.length; i++) {
-        await base44.entities.Player.update(shuffled[i].id, { turn_order: i });
-      }
+      const shuffled = shuffleArray(nonHostPlayers);
+
+      // Update all turn orders atomically
+      await Promise.all(
+        shuffled.map((player, i) =>
+          base44.entities.Player.update(player.id, { turn_order: i })
+        )
+      );
 
       const startTime = new Date(Date.now() + 15000).toISOString();
       await base44.entities.GameRoom.update(room.id, {

@@ -23,19 +23,6 @@ export default function Rate() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
-  // Real-time sync for brand updates (airing status, ratings)
-  useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
-      if (event.type === 'update' && event.data.is_airing && !ratedIds.has(event.data.id)) {
-        setShowRating(event.data);
-        setSelectedStars(0);
-        setRatingTimer(120);
-      }
-    });
-    return unsubscribe;
-  }, [queryClient, ratedIds]);
-
   const { data: myRatings = [] } = useQuery({
     queryKey: ["myRatings", user?.id],
     queryFn: () => base44.entities.Rating.filter({ user_email: user.id }),
@@ -46,6 +33,14 @@ export default function Rate() {
   const ratedIds = new Set(myRatings.map(r => r.brand_id));
 
   const [ratingTimer, setRatingTimer] = useState(null);
+
+  // Real-time sync for brand updates (airing status, ratings)
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   // Auto-show popup when brand starts airing and navigate to Rate tab
   useEffect(() => {
@@ -80,7 +75,8 @@ export default function Rate() {
   });
 
   const rateMutation = useMutation({
-    mutationFn: async ({ brandId, stars }) => {
+    mutationFn: async (variables) => {
+      const { brandId, stars } = variables;
       const brand = brands.find(b => b.id === brandId);
       toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
       await base44.entities.Rating.create({
@@ -89,17 +85,17 @@ export default function Rate() {
         brand_name: brand?.brand_name || "",
         stars,
       });
-      
+
       // Check if all players have rated
       const currentRatings = await base44.entities.Rating.filter({ brand_id: brandId });
       const totalPlayers = allPlayers.length;
-      
+
       if (currentRatings.length + 1 >= totalPlayers) {
         // All players have rated - calculate final score and stop airing
         const allStars = [...currentRatings.map(r => r.stars), stars];
         const finalAvg = allStars.reduce((sum, s) => sum + s, 0) / allStars.length;
         const finalPoints = Math.round(finalAvg * 20) - 10;
-        
+
         await base44.entities.Brand.update(brandId, {
           is_airing: false,
           aired: true,

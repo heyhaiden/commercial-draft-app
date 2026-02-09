@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getUserIdentity } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Search, Clock, CheckCircle, Lock } from "lucide-react";
+import { CheckCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -16,6 +16,12 @@ export default function RoomDraft() {
   const [user, setUser] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedBrand, setSelectedBrand] = useState(null);
+  const [failedImages, setFailedImages] = useState(new Set());
+
+  // Safe image error handler - no innerHTML XSS vulnerability
+  const handleImageError = useCallback((brandId) => {
+    setFailedImages(prev => new Set([...prev, brandId]));
+  }, []);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
 
@@ -74,37 +80,43 @@ export default function RoomDraft() {
   });
 
   const room = rooms[0];
-  // Filter out the host from players
-  const gamePlayers = players.filter(p => room && p.user_email !== room.host_email);
-  const sortedPlayers = [...gamePlayers].sort((a, b) => a.turn_order - b.turn_order);
   const isHost = user && room && user.id === room.host_email;
-  
-  const pickedBrandIds = new Set(roomPicks.map(p => p.brand_id));
-  const myPickedBrands = roomPicks.filter(p => p.user_email === user?.id).map(p => p.brand_id);
-  const availableBrands = brands.filter(b => !pickedBrandIds.has(b.id));
-  const filteredBrands = availableBrands.filter(b => 
-    searchTerm === "" || b.category === searchTerm
-  );
+
+  // Memoize expensive calculations
+  const sortedPlayers = useMemo(() => {
+    if (!room) return [];
+    const gamePlayers = players.filter(p => p.user_email !== room.host_email);
+    return [...gamePlayers].sort((a, b) => a.turn_order - b.turn_order);
+  }, [players, room]);
+
+  const pickedBrandIds = useMemo(() => new Set(roomPicks.map(p => p.brand_id)), [roomPicks]);
+  const myPickedBrandIds = useMemo(() => new Set(
+    roomPicks.filter(p => p.user_email === user?.id).map(p => p.brand_id)
+  ), [roomPicks, user?.id]);
+
+  const filteredBrands = useMemo(() => {
+    const available = brands.filter(b => !pickedBrandIds.has(b.id));
+    return available.filter(b => searchTerm === "" || b.category === searchTerm);
+  }, [brands, pickedBrandIds, searchTerm]);
 
   // Calculate current turn
   const [timeRemaining, setTimeRemaining] = useState(null);
 
-  const getCurrentTurnPlayer = () => {
+  // Memoize current turn calculation
+  const currentTurnPlayer = useMemo(() => {
     if (!room || !sortedPlayers.length) return null;
-    
+
     const totalPicks = roomPicks.length;
     const playersCount = sortedPlayers.length;
     const currentRound = Math.floor(totalPicks / playersCount) + 1;
     const pickInRound = totalPicks % playersCount;
-    
+
     // Snake draft logic
     const isReverse = room.snake_draft && currentRound % 2 === 0;
     const turnIndex = isReverse ? playersCount - 1 - pickInRound : pickInRound;
-    
-    return sortedPlayers[turnIndex];
-  };
 
-  const currentTurnPlayer = getCurrentTurnPlayer();
+    return sortedPlayers[turnIndex];
+  }, [room, sortedPlayers, roomPicks.length]);
   const isMyTurn = currentTurnPlayer?.user_email === user?.id;
   
   // Draft complete when ALL players have 5 picks
@@ -144,7 +156,7 @@ export default function RoomDraft() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [room, currentTurnPlayer, isDraftComplete, isMyTurn, availableBrands]);
+  }, [room, currentTurnPlayer, isDraftComplete, isMyTurn]);
 
   const skipTurnMutation = useMutation({
     mutationFn: async () => {
@@ -160,8 +172,8 @@ export default function RoomDraft() {
   });
 
   const lockPickMutation = useMutation({
-    mutationFn: async (brand) => {
-      const brandToPick = brand || selectedBrand;
+    mutationFn: async (brand = null) => {
+      const brandToPick = brand ?? selectedBrand;
       if (!brandToPick) return;
       
       // Visual feedback animation
@@ -341,9 +353,9 @@ export default function RoomDraft() {
         </div>
 
         {/* My Picks Section */}
-        {myPickedBrands.length > 0 && (
+        {myPickedBrandIds.size > 0 && (
           <div className="p-4 border-b border-[#5a5a4a]/30 bg-[#2d2d1e]">
-            <h3 className="text-xs font-bold text-[#a4a498] mb-2 uppercase tracking-wider">My Draft ({myPickedBrands.length}/5)</h3>
+            <h3 className="text-xs font-bold text-[#a4a498] mb-2 uppercase tracking-wider">My Draft ({myPickedBrandIds.size}/5)</h3>
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
               {roomPicks
                 .filter(p => p.user_email === user?.id)
@@ -356,15 +368,16 @@ export default function RoomDraft() {
                       className="flex-shrink-0 w-16 rounded-xl bg-green-500/10 border border-green-400/30 p-2 text-center"
                     >
                       <div className="w-10 h-10 mx-auto rounded-lg bg-white flex items-center justify-center p-1.5 mb-1">
-                        <img
-                          src={brand.logo_url}
-                          alt={brand.brand_name}
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.parentElement.innerHTML = `<span class="font-bold text-gray-700 text-xs">${brand.brand_name?.[0]}</span>`;
-                          }}
-                        />
+                        {failedImages.has(brand.id) ? (
+                          <span className="font-bold text-gray-700 text-xs">{brand.brand_name?.[0]}</span>
+                        ) : (
+                          <img
+                            src={brand.logo_url}
+                            alt={brand.brand_name}
+                            className="w-full h-full object-contain"
+                            onError={() => handleImageError(brand.id)}
+                          />
+                        )}
                       </div>
                       <p className="text-[9px] text-white font-bold truncate">{brand.brand_name}</p>
                       <p className="text-[8px] text-green-400">R{pick.round}</p>
@@ -409,7 +422,7 @@ export default function RoomDraft() {
           {brands.map(brand => {
             const isSelected = selectedBrand?.id === brand.id;
             const isPicked = pickedBrandIds.has(brand.id);
-            const isMine = myPickedBrands.includes(brand.id);
+            const isMine = myPickedBrandIds.has(brand.id);
             const pickedByPlayer = roomPicks.find(p => p.brand_id === brand.id);
             const pickedPlayer = pickedByPlayer ? players.find(p => p.user_email === pickedByPlayer.user_email) : null;
             const showBrand = !isPicked || searchTerm === "" || brand.category === searchTerm;
@@ -435,15 +448,16 @@ export default function RoomDraft() {
                 )}
               >
                 <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-2 flex-shrink-0">
-                  <img
-                    src={brand.logo_url}
-                    alt={brand.brand_name}
-                    className="w-full h-full object-contain"
-                    onError={(e) => {
-                      e.target.style.display = "none";
-                      e.target.parentElement.innerHTML = `<span class="font-bold text-gray-700 text-lg">${brand.brand_name?.[0]}</span>`;
-                    }}
-                  />
+                  {failedImages.has(brand.id) ? (
+                    <span className="font-bold text-gray-700 text-lg">{brand.brand_name?.[0]}</span>
+                  ) : (
+                    <img
+                      src={brand.logo_url}
+                      alt={brand.brand_name}
+                      className="w-full h-full object-contain"
+                      onError={() => handleImageError(brand.id)}
+                    />
+                  )}
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-white">{brand.brand_name}</p>

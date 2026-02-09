@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity } from "@/components/utils/guestAuth";
-import { useQuery } from "@tanstack/react-query";
-import { Search, TrendingUp, TrendingDown, Crown } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { TrendingUp, Crown } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
 
 export default function Leaderboard() {
@@ -47,25 +47,38 @@ export default function Leaderboard() {
     queryFn: () => base44.entities.Player.list("-created_date", 1000),
   });
 
-  // Get all unique players from picks
-  const userScores = {};
-  allPicks.forEach(pick => {
-    if (!userScores[pick.user_email]) {
-      userScores[pick.user_email] = { name: pick.user_name, score: 0 };
-    }
-    const brand = brands.find(b => b.id === pick.brand_id);
-    if (brand?.aired) {
-      userScores[pick.user_email].score += brand.points || 0;
-    }
-  });
+  // Memoize leaderboard calculation for performance
+  const { leaderboard, myRank, hasAnyRatings } = useMemo(() => {
+    // Create brand lookup map for O(1) access
+    const brandMap = new Map(brands.map(b => [b.id, b]));
 
-  const leaderboard = Object.entries(userScores)
-    .map(([email, data]) => ({ email, ...data }))
-    .sort((a, b) => b.score - a.score);
+    const userScores = {};
+    allPicks.forEach(pick => {
+      if (!userScores[pick.user_email]) {
+        userScores[pick.user_email] = { name: pick.user_name, score: 0 };
+      }
+      const brand = brandMap.get(pick.brand_id);
+      if (brand?.aired) {
+        userScores[pick.user_email].score += brand.points || 0;
+      }
+    });
 
-  const hasAnyRatings = brands.some(b => b.aired);
+    const sorted = Object.entries(userScores)
+      .map(([email, data]) => ({ email, ...data }))
+      .sort((a, b) => b.score - a.score);
 
-  const myRank = leaderboard.findIndex(e => e.email === user?.id) + 1;
+    return {
+      leaderboard: sorted,
+      myRank: sorted.findIndex(e => e.email === user?.id) + 1,
+      hasAnyRatings: brands.some(b => b.aired),
+    };
+  }, [allPicks, brands, user?.id]);
+
+  // Memoize player lookup map for O(1) access in render
+  const playerMap = useMemo(() =>
+    new Map(allPlayers.map(p => [p.user_email, p])),
+    [allPlayers]
+  );
 
   // Check if all brands have been aired and rated
   const allBrandsAired = brands.length > 0 && brands.every(b => b.aired || b.is_airing === false);
@@ -118,7 +131,7 @@ export default function Leaderboard() {
               const heights = ["h-32", "h-40", "h-28"];
               const colors = ["from-gray-400/20", "from-[#f4c542]/20", "from-orange-600/20"];
               const isMe = entry.email === user?.id;
-              const player = allPlayers.find(p => p.user_email === entry.email);
+              const player = playerMap.get(entry.email);
               const playerIcon = player?.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
               return (
                 <div key={entry.email} className="flex-1 flex flex-col items-center">
@@ -162,7 +175,7 @@ export default function Leaderboard() {
               {leaderboard.slice(3).map((entry, idx) => {
             const rank = idx + 4;
             const isMe = entry.email === user?.id;
-            const player = allPlayers.find(p => p.user_email === entry.email);
+            const player = playerMap.get(entry.email);
             const playerIcon = player?.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
             return (
               <div

@@ -1,9 +1,7 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity } from "@/components/utils/guestAuth";
-import { useQuery } from "@tanstack/react-query";
-import { Settings } from "lucide-react";
-import SeasonScorecard from "@/components/game/SeasonScorecard";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
 import OnboardingTooltip from "@/components/common/OnboardingTooltip";
 import { motion } from "framer-motion";
@@ -13,6 +11,12 @@ export default function MyDraft() {
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [failedImages, setFailedImages] = useState(new Set());
+
+  // Safe image error handler - no XSS
+  const handleImageError = useCallback((brandId) => {
+    setFailedImages(prev => new Set([...prev, brandId]));
+  }, []);
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
@@ -57,15 +61,21 @@ export default function MyDraft() {
     return unsubscribe;
   }, [queryClient]);
 
-  // Calculate rank
-  const userScores = {};
-  allPicks.forEach(pick => {
-    if (!userScores[pick.user_email]) userScores[pick.user_email] = 0;
-    const brand = brands.find(b => b.id === pick.brand_id);
-    if (brand?.aired) userScores[pick.user_email] += brand.points || 0;
-  });
-  const sortedUsers = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
-  const myRank = sortedUsers.findIndex(([email]) => email === user?.id) + 1;
+  // Memoize rank calculation for performance
+  const myRank = useMemo(() => {
+    // Create brand lookup map for O(1) access
+    const brandMap = new Map(brands.map(b => [b.id, b]));
+
+    const userScores = {};
+    allPicks.forEach(pick => {
+      if (!userScores[pick.user_email]) userScores[pick.user_email] = 0;
+      const brand = brandMap.get(pick.brand_id);
+      if (brand?.aired) userScores[pick.user_email] += brand.points || 0;
+    });
+
+    const sortedUsers = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
+    return sortedUsers.findIndex(([email]) => email === user?.id) + 1;
+  }, [allPicks, brands, user?.id]);
 
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
 
@@ -144,15 +154,16 @@ export default function MyDraft() {
                         }`}
                       >
                       <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center flex-shrink-0 p-2">
-                        <img
-                          src={brand.logo_url}
-                          alt={brand.brand_name}
-                          className="w-full h-full object-contain"
-                          onError={(e) => {
-                            e.target.style.display = "none";
-                            e.target.parentElement.innerHTML = `<span class="font-bold text-gray-700 text-lg">${brand.brand_name?.[0]}</span>`;
-                          }}
-                        />
+                        {failedImages.has(brand.id) ? (
+                          <span className="font-bold text-gray-700 text-lg">{brand.brand_name?.[0]}</span>
+                        ) : (
+                          <img
+                            src={brand.logo_url}
+                            alt={brand.brand_name}
+                            className="w-full h-full object-contain"
+                            onError={() => handleImageError(brand.id)}
+                          />
+                        )}
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-white">{brand.brand_name}</p>
