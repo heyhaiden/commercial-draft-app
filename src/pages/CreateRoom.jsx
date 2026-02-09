@@ -56,33 +56,33 @@ export default function CreateRoom() {
 
   if (roomCode) {
     return (
-      <div className="min-h-screen bg-[#3d3d2e] text-white pb-20">
-        <div className="max-w-md mx-auto px-6 py-8">
-          <div className="flex items-center justify-between mb-12">
-            <button onClick={() => navigate(-1)} className="w-12 h-12 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
-              <ArrowLeft className="w-5 h-5" />
+      <div className="min-h-screen bg-[#3d3d2e] text-white pb-20 flex flex-col">
+        <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
+              <ArrowLeft className="w-4 h-4" />
             </button>
-            <h1 className="text-[#a4a498] text-sm font-medium tracking-wider">ADMIN PANEL</h1>
-            <div className="w-12" />
+            <h1 className="text-[#a4a498] text-xs font-medium tracking-wider">ADMIN PANEL</h1>
+            <div className="w-10" />
           </div>
 
-          <div className="flex justify-center mb-8">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
-              <Gamepad2 className="w-10 h-10 text-[#2d2d1e]" />
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
+              <Gamepad2 className="w-8 h-8 text-[#2d2d1e]" />
             </div>
           </div>
 
-          <h2 className="text-4xl font-black italic text-center mb-4">CREATE GAME ROOM</h2>
-          <p className="text-[#a4a498] text-center mb-12">Set up your draft environment</p>
+          <h2 className="text-3xl font-black italic text-center mb-3">ROOM CREATED!</h2>
+          <p className="text-[#a4a498] text-center text-sm mb-8">Share this code with players</p>
 
-          <div className="rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-6 mb-6">
-            <div className="text-center mb-4">
-              <p className="text-[#f4c542] text-sm font-bold tracking-wider mb-2">YOUR ROOM CODE</p>
-              <p className="text-6xl font-black tracking-wider select-text">{roomCode}</p>
+          <div className="rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-5 mb-6">
+            <div className="text-center mb-3">
+              <p className="text-[#f4c542] text-xs font-bold tracking-wider mb-2">YOUR ROOM CODE</p>
+              <p className="text-5xl font-black tracking-wider select-text">{roomCode}</p>
             </div>
             <Button
               onClick={shareCode}
-              className="w-full h-12 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2"
+              className="w-full h-11 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2 text-sm"
             >
               <Share2 className="w-4 h-4" />
               Copy Code to Share
@@ -91,7 +91,7 @@ export default function CreateRoom() {
 
           <Button
             onClick={goToLobby}
-            className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg"
+            className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base"
           >
             GO TO LOBBY →
           </Button>
@@ -101,81 +101,81 @@ export default function CreateRoom() {
   }
 
   return (
-    <div className="min-h-screen bg-[#3d3d2e] text-white pb-20">
-      <div className="max-w-md mx-auto px-6 py-8">
-        <div className="flex items-center justify-between mb-12">
-          <button onClick={() => navigate(-1)} className="w-12 h-12 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
-            <ArrowLeft className="w-5 h-5" />
+    <div className="min-h-screen bg-[#3d3d2e] text-white pb-20 flex flex-col">
+      <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col">
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-[#a4a498] text-sm font-medium tracking-wider">ADMIN PANEL</h1>
-          <div className="w-12" />
+          <h1 className="text-[#a4a498] text-xs font-medium tracking-wider">ADMIN PANEL</h1>
+          <div className="w-10" />
         </div>
 
-        <div className="flex justify-center mb-8">
-          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
-            <Gamepad2 className="w-10 h-10 text-[#2d2d1e]" />
+        <div className="flex justify-center mb-4">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
+            <Gamepad2 className="w-7 h-7 text-[#2d2d1e]" />
           </div>
         </div>
 
-        <h2 className="text-4xl font-black italic text-center mb-4">CREATE GAME ROOM</h2>
-        <p className="text-[#a4a498] text-center mb-12">Set up your draft environment</p>
+        <h2 className="text-2xl font-black italic text-center mb-2">CREATE GAME ROOM</h2>
+        <p className="text-[#a4a498] text-center text-sm mb-6">Set up your draft environment</p>
 
-        <div className="space-y-4 mb-12">
+        <div className="space-y-3 mb-auto">
           <div className="flex items-center justify-between">
             <h3 className="text-white font-bold">Draft Settings</h3>
             <span className="text-[#a4a498] text-sm">Advanced</span>
           </div>
 
           {/* Round Timer */}
-          <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-4">
+          <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-blue-500/20 flex items-center justify-center">
-                  <Timer className="w-6 h-6 text-blue-400" />
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center">
+                  <Timer className="w-5 h-5 text-blue-400" />
                 </div>
                 <div>
-                  <p className="font-bold">Round Timer</p>
-                  <p className="text-sm text-[#a4a498]">Time per pick</p>
+                  <p className="font-bold text-sm">Round Timer</p>
+                  <p className="text-xs text-[#a4a498]">Time per pick</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setRoundTimer(Math.max(15, roundTimer - 15))} className="w-8 h-8 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-xl">-</button>
-                <span className="text-2xl font-bold w-16 text-center">{roundTimer}s</span>
-                <button onClick={() => setRoundTimer(Math.min(120, roundTimer + 15))} className="w-8 h-8 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-xl">+</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setRoundTimer(Math.max(15, roundTimer - 15))} className="w-7 h-7 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-lg">-</button>
+                <span className="text-xl font-bold w-12 text-center">{roundTimer}s</span>
+                <button onClick={() => setRoundTimer(Math.min(120, roundTimer + 15))} className="w-7 h-7 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-lg">+</button>
               </div>
             </div>
           </div>
 
           {/* Max Players */}
-          <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-4">
+          <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center">
-                  <Users className="w-6 h-6 text-purple-400" />
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-purple-500/20 flex items-center justify-center">
+                  <Users className="w-5 h-5 text-purple-400" />
                 </div>
                 <div>
-                  <p className="font-bold">Max Players</p>
-                  <p className="text-sm text-[#a4a498]">Room capacity</p>
+                  <p className="font-bold text-sm">Max Players</p>
+                  <p className="text-xs text-[#a4a498]">Room capacity</p>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
-                <button onClick={() => setMaxPlayers(Math.max(2, maxPlayers - 1))} className="w-8 h-8 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-xl">-</button>
-                <span className="text-2xl font-bold w-12 text-center">{maxPlayers}</span>
-                <button onClick={() => setMaxPlayers(Math.min(12, maxPlayers + 1))} className="w-8 h-8 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-xl">+</button>
+              <div className="flex items-center gap-2">
+                <button onClick={() => setMaxPlayers(Math.max(2, maxPlayers - 1))} className="w-7 h-7 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-lg">-</button>
+                <span className="text-xl font-bold w-10 text-center">{maxPlayers}</span>
+                <button onClick={() => setMaxPlayers(Math.min(12, maxPlayers + 1))} className="w-7 h-7 rounded-lg bg-[#5a5a4a]/40 flex items-center justify-center text-lg">+</button>
               </div>
             </div>
           </div>
 
           {/* Snake Draft */}
-          <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-4">
+          <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-3">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-xl bg-green-500/20 flex items-center justify-center">
-                  <Grid3x3 className="w-6 h-6 text-green-400" />
+              <div className="flex items-center gap-2">
+                <div className="w-10 h-10 rounded-xl bg-green-500/20 flex items-center justify-center">
+                  <Grid3x3 className="w-5 h-5 text-green-400" />
                 </div>
                 <div>
-                  <p className="font-bold">Snake Draft</p>
-                  <p className="text-sm text-[#a4a498]">Reverse order each round</p>
+                  <p className="font-bold text-sm">Snake Draft</p>
+                  <p className="text-xs text-[#a4a498]">Reverse order each round</p>
                 </div>
               </div>
               <Switch checked={snakeDraft} onCheckedChange={setSnakeDraft} />
@@ -183,13 +183,15 @@ export default function CreateRoom() {
           </div>
         </div>
 
-        <Button
-          onClick={createRoom}
-          disabled={creating}
-          className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg"
-        >
-          {creating ? "CREATING..." : "CREATE ROOM"}
-        </Button>
+        <div className="mt-6">
+          <Button
+            onClick={createRoom}
+            disabled={creating}
+            className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base"
+          >
+            {creating ? "CREATING..." : "CREATE ROOM"}
+          </Button>
+        </div>
       </div>
     </div>
   );

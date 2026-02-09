@@ -56,6 +56,7 @@ import Lobby from './pages/Lobby';
 import MyDraft from './pages/MyDraft';
 import Rate from './pages/Rate';
 import Leaderboard from './pages/Leaderboard';
+import RoomDraft from './pages/RoomDraft';
 import __Layout from './Layout.jsx';
 
 
@@ -69,6 +70,7 @@ export const PAGES = {
     "MyDraft": MyDraft,
     "Rate": Rate,
     "Leaderboard": Leaderboard,
+    "RoomDraft": RoomDraft,
 }
 
 export const pagesConfig = {

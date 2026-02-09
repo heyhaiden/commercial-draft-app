@@ -3,7 +3,8 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tv, Play, Square, CheckCircle, Settings, Users, BarChart3 } from "lucide-react";
+import { Tv, Play, Square, CheckCircle, Settings, Users, BarChart3, ArrowLeft } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
@@ -12,6 +13,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     base44.auth.me().then(u => {
@@ -135,6 +137,9 @@ export default function Admin() {
       <div className="max-w-5xl mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
+              <ArrowLeft className="w-5 h-5" />
+            </button>
             <Settings className="w-6 h-6 text-[#f4c542]" />
             <h1 className="text-2xl font-black text-white">Admin Control Panel</h1>
           </div>
