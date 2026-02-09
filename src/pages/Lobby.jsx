@@ -190,6 +190,7 @@ export default function Lobby() {
                   <div className="flex-1">
                     <p className="font-bold text-white">
                       {player.display_name}
+                    </p>
                     <p className={`text-xs ${player.ready ? "text-green-400" : "text-[#a4a498]"}`}>
                       {player.ready ? "Ready" : "Connecting..."}
                     </p>
