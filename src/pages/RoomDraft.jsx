@@ -82,15 +82,24 @@ export default function RoomDraft() {
 
   const currentTurnPlayer = getCurrentTurnPlayer();
   const isMyTurn = currentTurnPlayer?.user_email === user?.id;
-  const isDraftComplete = roomPicks.length >= sortedPlayers.length * 5;
+  
+  // Draft complete when ALL players have 5 picks
+  const isDraftComplete = sortedPlayers.every(player => {
+    const playerPicks = roomPicks.filter(p => p.user_email === player.user_email).length;
+    return playerPicks >= 5;
+  });
 
   useEffect(() => {
-    if (isDraftComplete && room) {
+    if (isDraftComplete && room && user) {
       setTimeout(() => {
-        navigate(createPageUrl("MyDraft"));
+        if (isHost) {
+          navigate(createPageUrl("Admin"));
+        } else {
+          navigate(createPageUrl("MyDraft"));
+        }
       }, 2000);
     }
-  }, [isDraftComplete, room, navigate]);
+  }, [isDraftComplete, room, navigate, isHost, user]);
 
   // Timer countdown
   useEffect(() => {

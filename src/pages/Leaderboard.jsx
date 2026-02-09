@@ -24,7 +24,7 @@ export default function Leaderboard() {
     queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
   });
 
-  // Calculate scores
+  // Get all unique players from picks
   const userScores = {};
   allPicks.forEach(pick => {
     if (!userScores[pick.user_email]) {
@@ -39,6 +39,8 @@ export default function Leaderboard() {
   const leaderboard = Object.entries(userScores)
     .map(([email, data]) => ({ email, ...data }))
     .sort((a, b) => b.score - a.score);
+
+  const hasAnyRatings = brands.some(b => b.aired);
 
   const myRank = leaderboard.findIndex(e => e.email === user?.id) + 1;
 
@@ -109,7 +111,7 @@ export default function Leaderboard() {
         )}
 
         {/* Top 3 Podium */}
-        {leaderboard.length >= 3 && (
+        {hasAnyRatings && leaderboard.length >= 3 && (
         <div className="mb-8">
           <div className="flex items-center justify-center gap-2 mb-6">
             {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, idx) => {
@@ -140,12 +142,23 @@ export default function Leaderboard() {
 
         {/* Leaderboard List */}
         <div className="space-y-2">
-          <div className="flex items-center justify-between text-[#a4a498] text-xs font-bold mb-2 px-4">
-            <span>RANK</span>
-            <span>USER</span>
-            <span>POINTS</span>
-          </div>
-          {leaderboard.slice(3).map((entry, idx) => {
+          {!hasAnyRatings && (
+            <div className="text-center py-12">
+              <div className="w-20 h-20 rounded-full bg-[#4a4a3a]/20 flex items-center justify-center mx-auto mb-4">
+                <span className="text-4xl">📊</span>
+              </div>
+              <h3 className="text-xl font-bold mb-2">Waiting for Game to Start</h3>
+              <p className="text-[#a4a498] text-sm">Rankings will appear once commercials start airing and players rate them!</p>
+            </div>
+          )}
+          {hasAnyRatings && (
+            <>
+              <div className="flex items-center justify-between text-[#a4a498] text-xs font-bold mb-2 px-4">
+                <span>RANK</span>
+                <span>USER</span>
+                <span>POINTS</span>
+              </div>
+              {leaderboard.slice(3).map((entry, idx) => {
             const rank = idx + 4;
             const isMe = entry.email === user?.id;
             return (
@@ -174,6 +187,8 @@ export default function Leaderboard() {
               </div>
             );
           })}
+            </>
+          )}
         </div>
       </div>
 

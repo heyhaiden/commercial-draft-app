@@ -83,7 +83,9 @@ export default function MyDraft() {
             </div>
             <div className="text-right">
               <p className="text-[#a4a498] text-xs">Current Rank</p>
-              <p className="text-white text-3xl font-black">#{myRank || "-"}</p>
+              <p className="text-white text-3xl font-black">
+                {brands.filter(b => b.aired).length > 0 ? `#${myRank || "-"}` : "-"}
+              </p>
             </div>
           </div>
         </div>
@@ -135,7 +137,7 @@ export default function MyDraft() {
                       </div>
                       <div className="flex-1">
                         <p className="font-bold text-white">{brand.brand_name}</p>
-                        <p className="text-[#a4a498] text-sm">Projected: {Math.round((brand.average_rating || 3) * 20 - 10)} pts</p>
+                        <p className="text-[#a4a498] text-sm">{brand.title}</p>
                       </div>
                       <div className="text-right">
                         {isAiring ? (

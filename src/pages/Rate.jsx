@@ -124,6 +124,16 @@ export default function Rate() {
           </div>
         )}
 
+        {brands.filter(b => b.aired).length === 0 && !airingBrand && (
+          <div className="text-center py-12">
+            <div className="w-20 h-20 rounded-full bg-[#4a4a3a]/20 flex items-center justify-center mx-auto mb-4">
+              <span className="text-4xl">📺</span>
+            </div>
+            <h3 className="text-xl font-bold mb-2">No Ads Yet</h3>
+            <p className="text-[#a4a498] text-sm px-8">Commercials will appear here to rate during the game. Get ready to score them!</p>
+          </div>
+        )}
+
         <div className="space-y-2">
           {brands.filter(b => b.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0)).map(brand => {
             const hasRated = ratedIds.has(brand.id);
