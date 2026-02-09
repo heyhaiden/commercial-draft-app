@@ -123,7 +123,6 @@ export default function CreateRoom() {
         <div className="space-y-3 mb-auto">
           <div className="flex items-center justify-between">
             <h3 className="text-white font-bold">Draft Settings</h3>
-            <span className="text-[#a4a498] text-sm">Advanced</span>
           </div>
 
           {/* Round Timer */}
