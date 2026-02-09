@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { ArrowLeft, Bookmark, X } from "lucide-react";
+import { ArrowLeft, Bookmark, Delete } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
@@ -140,7 +140,7 @@ export default function JoinGame() {
             onClick={handleBackspace}
             className="h-14 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <X className="w-5 h-5" />
+            <Delete className="w-5 h-5" />
           </button>
         </div>
 
