@@ -21,8 +21,20 @@ export default function Rate() {
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
-    refetchInterval: 3000,
   });
+
+  // Real-time sync for brand updates (airing status, ratings)
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      if (event.type === 'update' && event.data.is_airing && !ratedIds.has(event.data.id)) {
+        setShowRating(event.data);
+        setSelectedStars(0);
+        setRatingTimer(120);
+      }
+    });
+    return unsubscribe;
+  }, [queryClient, ratedIds]);
 
   const { data: myRatings = [] } = useQuery({
     queryKey: ["myRatings", user?.id],
@@ -44,16 +56,7 @@ export default function Rate() {
     }
   }, [airingBrand?.id]);
 
-  // Subscribe to brand changes
-  useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe((event) => {
-      if (event.type === 'update' && event.data.is_airing && !ratedIds.has(event.data.id)) {
-        // Force navigation to Rate tab when ad starts airing
-        window.location.hash = '#/Rate';
-      }
-    });
-    return unsubscribe;
-  }, [ratedIds]);
+
 
   // Rating countdown timer
   useEffect(() => {

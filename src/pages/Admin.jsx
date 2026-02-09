@@ -26,8 +26,23 @@ export default function Admin() {
   const { data: brands = [], isLoading: brandsLoading } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list("brand_name", 100),
-    refetchInterval: 3000,
   });
+
+  // Real-time sync for brand updates
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
+  // Real-time sync for ratings
+  useEffect(() => {
+    const unsubscribe = base44.entities.Rating.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["allRatings"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const { data: gameStates = [] } = useQuery({
     queryKey: ["gameState"],

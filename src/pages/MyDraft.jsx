@@ -38,6 +38,25 @@ export default function MyDraft() {
     queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
   });
 
+  const queryClient = useQueryClient();
+
+  // Real-time sync for brand updates
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
+  // Real-time sync for draft picks
+  useEffect(() => {
+    const unsubscribe = base44.entities.DraftPick.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["myPicks"] });
+      queryClient.invalidateQueries({ queryKey: ["allPicks"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
   // Calculate rank
   const userScores = {};
   allPicks.forEach(pick => {

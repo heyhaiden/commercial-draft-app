@@ -27,22 +27,46 @@ export default function RoomDraft() {
     queryKey: ["room", roomCode],
     queryFn: () => base44.entities.GameRoom.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 5000,
   });
 
   const { data: players = [] } = useQuery({
     queryKey: ["players", roomCode],
     queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 5000,
   });
 
   const { data: roomPicks = [] } = useQuery({
     queryKey: ["roomPicks", roomCode],
     queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 5000,
   });
+
+  // Real-time sync for room updates
+  useEffect(() => {
+    if (!roomCode) return;
+    const unsubscribe = base44.entities.GameRoom.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
+    });
+    return unsubscribe;
+  }, [roomCode, queryClient]);
+
+  // Real-time sync for player updates
+  useEffect(() => {
+    if (!roomCode) return;
+    const unsubscribe = base44.entities.Player.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["players", roomCode] });
+    });
+    return unsubscribe;
+  }, [roomCode, queryClient]);
+
+  // Real-time sync for draft picks
+  useEffect(() => {
+    if (!roomCode) return;
+    const unsubscribe = base44.entities.RoomDraftPick.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["roomPicks", roomCode] });
+    });
+    return unsubscribe;
+  }, [roomCode, queryClient]);
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],

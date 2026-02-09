@@ -10,6 +10,8 @@ export default function Leaderboard() {
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
 
+  const queryClient = useQueryClient();
+
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
   }, []);
@@ -23,6 +25,22 @@ export default function Leaderboard() {
     queryKey: ["allPicks"],
     queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
   });
+
+  // Real-time sync for brand scores
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
+
+  // Real-time sync for draft picks
+  useEffect(() => {
+    const unsubscribe = base44.entities.DraftPick.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["allPicks"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ["allPlayers"],

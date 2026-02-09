@@ -26,15 +26,31 @@ export default function Lobby() {
     queryKey: ["room", roomCode],
     queryFn: () => base44.entities.GameRoom.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 5000,
   });
 
   const { data: players = [] } = useQuery({
     queryKey: ["players", roomCode],
     queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 5000,
   });
+
+  // Real-time sync for room updates
+  useEffect(() => {
+    if (!roomCode) return;
+    const unsubscribe = base44.entities.GameRoom.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
+    });
+    return unsubscribe;
+  }, [roomCode, queryClient]);
+
+  // Real-time sync for player updates
+  useEffect(() => {
+    if (!roomCode) return;
+    const unsubscribe = base44.entities.Player.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["players", roomCode] });
+    });
+    return unsubscribe;
+  }, [roomCode, queryClient]);
 
   const room = rooms[0];
   const isHost = user && room && user.id === room.host_email;
