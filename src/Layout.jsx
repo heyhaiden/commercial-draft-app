@@ -3,7 +3,7 @@ import MobileNav from "@/components/common/MobileNav";
 
 export default function Layout({ children, currentPageName }) {
   // No nav on these pages
-  const noNavPages = ["Home", "JoinGame", "CreateRoom", "ProfileSetup", "Lobby", "Admin"];
+  const noNavPages = ["Home", "JoinGame", "CreateRoom", "ProfileSetup", "Lobby", "Admin", "RoomDraft"];
   const showNav = !noNavPages.includes(currentPageName);
   
   return (
