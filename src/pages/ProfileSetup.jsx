@@ -9,12 +9,12 @@ import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
 
 const ICONS = [
-  { id: "icon1", emoji: "🎯", locked: false },
-  { id: "icon2", emoji: "✏️", locked: false },
-  { id: "icon3", emoji: "🎮", locked: true },
-  { id: "icon4", emoji: "✋", locked: false },
-  { id: "icon5", emoji: "📺", locked: true },
-  { id: "icon6", emoji: "👔", locked: true },
+  { id: "icon1", emoji: "🏈", locked: false },
+  { id: "icon2", emoji: "🏆", locked: false },
+  { id: "icon3", emoji: "⭐", locked: false },
+  { id: "icon4", emoji: "🔥", locked: false },
+  { id: "icon5", emoji: "⚡", locked: false },
+  { id: "icon6", emoji: "👑", locked: false },
 ];
 
 export default function ProfileSetup() {
@@ -112,7 +112,6 @@ export default function ProfileSetup() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <label className="text-sm font-bold text-[#a4a498] tracking-wider">SELECT ICON</label>
-            <span className="text-sm text-[#f4c542]">3/6 Unlocked</span>
           </div>
           <div className="grid grid-cols-3 gap-4">
             {ICONS.map(icon => (

@@ -19,12 +19,12 @@ export default function Home() {
       {/* Background gradient */}
       <div className="fixed inset-0 bg-gradient-to-b from-[#3d3d2e] via-[#2d2d1e] to-[#1d1d0e] pointer-events-none" />
       
-      <div className="relative max-w-md mx-auto px-6 py-12 flex flex-col items-center justify-center min-h-screen">
+      <div className="relative max-w-md mx-auto px-6 py-8 flex flex-col items-center justify-center min-h-screen">
         {/* Live Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 backdrop-blur-sm mb-8"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 backdrop-blur-sm mb-6"
         >
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
           <span className="text-sm text-[#d4d4c8] font-medium tracking-wide">SUPER BOWL LVIII SEASON</span>
@@ -35,9 +35,9 @@ export default function Home() {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2 }}
-          className="w-32 h-32 rounded-[32px] bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center shadow-2xl mb-8 border-4 border-[#3d3d2e]"
+          className="w-28 h-28 rounded-[28px] bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center shadow-2xl mb-6 border-4 border-[#3d3d2e]"
         >
-          <Trophy className="w-16 h-16 text-[#3d3d2e]" />
+          <Trophy className="w-14 h-14 text-[#3d3d2e]" />
         </motion.div>
 
         {/* Title */}
@@ -45,7 +45,7 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
-          className="text-5xl font-black text-center mb-4 leading-tight"
+          className="text-4xl font-black text-center mb-3 leading-tight"
         >
           <span className="italic text-white">COMM</span>
           <span className="italic text-[#f4c542]">ERCIAL</span>
@@ -58,7 +58,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-[#a4a498] text-center mb-12 max-w-xs"
+          className="text-[#a4a498] text-center mb-8 max-w-xs text-sm"
         >
           The fantasy league for the world's most expensive ads.
         </motion.p>
@@ -68,14 +68,14 @@ export default function Home() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="w-full aspect-video rounded-3xl bg-gradient-to-b from-[#4a4a3a]/20 to-[#2a2a1a]/20 border border-[#5a5a4a]/30 flex items-center justify-center mb-12 overflow-hidden relative"
+          className="w-full aspect-video rounded-3xl bg-gradient-to-b from-[#4a4a3a]/20 to-[#2a2a1a]/20 border border-[#5a5a4a]/30 flex items-center justify-center mb-8 overflow-hidden relative"
         >
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1508362526420-9cf96cdfd7b3?w=800')] bg-cover bg-center opacity-20" />
-          <div className="relative w-16 h-16 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
-            <Play className="w-6 h-6 text-white ml-1" fill="white" />
+          <div className="relative w-14 h-14 rounded-full bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/20">
+            <Play className="w-5 h-5 text-white ml-1" fill="white" />
           </div>
-          <div className="absolute bottom-4 left-0 right-0 text-center">
-            <p className="text-[#a4a498] text-sm font-medium tracking-wider">WATCH TRAILER</p>
+          <div className="absolute bottom-3 left-0 right-0 text-center">
+            <p className="text-[#a4a498] text-xs font-medium tracking-wider">WATCH TRAILER</p>
           </div>
         </motion.div>
 
@@ -114,7 +114,7 @@ export default function Home() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.7 }}
-            className="mt-6"
+            className="mt-4"
           >
             <Link to={createPageUrl("CreateRoom")}>
               <button className="flex items-center gap-2 text-[#a4a498] hover:text-white transition-colors text-sm">
@@ -130,7 +130,7 @@ export default function Home() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
-          className="mt-8 text-[#6a6a5a] text-xs"
+          className="mt-4 text-[#6a6a5a] text-xs"
         >
           VERSION 2.4.0 • BUILD 892
         </motion.p>

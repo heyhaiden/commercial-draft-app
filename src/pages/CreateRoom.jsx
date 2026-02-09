@@ -17,7 +17,7 @@ export default function CreateRoom() {
   const navigate = useNavigate();
 
   const generateCode = () => {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return Math.floor(1000 + Math.random() * 9000).toString();
   };
 
   const createRoom = async () => {
@@ -78,7 +78,7 @@ export default function CreateRoom() {
           <div className="rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-6 mb-6">
             <div className="text-center mb-4">
               <p className="text-[#f4c542] text-sm font-bold tracking-wider mb-2">YOUR ROOM CODE</p>
-              <p className="text-5xl font-black tracking-wider">SB-{roomCode.slice(0,4)}-{roomCode.slice(4)}</p>
+              <p className="text-6xl font-black tracking-wider">{roomCode}</p>
             </div>
             <Button
               onClick={shareCode}

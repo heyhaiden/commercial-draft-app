@@ -12,7 +12,7 @@ export default function JoinGame() {
   const navigate = useNavigate();
 
   const handleKeyPress = (num) => {
-    if (code.length < 6) {
+    if (code.length < 4) {
       setCode(code + num);
     }
   };
@@ -26,8 +26,8 @@ export default function JoinGame() {
   };
 
   const handleJoin = async () => {
-    if (code.length !== 6) {
-      toast.error("Please enter a 6-digit code");
+    if (code.length !== 4) {
+      toast.error("Please enter a 4-digit code");
       return;
     }
 
@@ -90,12 +90,12 @@ export default function JoinGame() {
 
         {/* Title */}
         <h2 className="text-4xl font-black italic text-center mb-4">ENTER ROOM CODE</h2>
-        <p className="text-[#a4a498] text-center mb-12">Ask the host for the 6-digit game ID</p>
+        <p className="text-[#a4a498] text-center mb-12">Ask the host for the 4-digit game ID</p>
 
         {/* Code Display */}
         <div className="mb-12">
-          <div className="h-20 rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 flex items-center justify-center px-8 gap-2">
-            {[0, 1, 2, 3, 4, 5].map((i) => (
+          <div className="h-20 rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 flex items-center justify-center px-8 gap-3">
+            {[0, 1, 2, 3].map((i) => (
               <span key={i} className="text-5xl font-bold text-white">
                 {code[i] || ""}
               </span>
@@ -143,7 +143,7 @@ export default function JoinGame() {
         {/* Join Button */}
         <Button
           onClick={handleJoin}
-          disabled={code.length !== 6}
+          disabled={code.length !== 4}
           className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
         >
           JOIN LOBBY
