@@ -21,9 +21,11 @@ export default function CreateRoom() {
 
   useEffect(() => {
     async function checkActiveRoom() {
-      const rooms = await base44.entities.GameRoom.list("-created_date", 1);
-      if (rooms.length > 0 && rooms[0].status !== "completed") {
-        setActiveRoom(rooms[0]);
+      const userIdentity = await getUserIdentity(base44);
+      const rooms = await base44.entities.GameRoom.filter({ host_email: userIdentity.id });
+      const activeRooms = rooms.filter(r => r.status !== "completed");
+      if (activeRooms.length > 0) {
+        setActiveRoom(activeRooms[0]);
       }
       setLoading(false);
     }
@@ -103,9 +105,33 @@ export default function CreateRoom() {
           <Button
             onClick={() => navigate(createPageUrl("Admin"))}
             variant="outline"
-            className="w-full h-14 rounded-[24px] bg-transparent border-2 border-[#5a5a4a]/40 text-white hover:bg-[#4a4a3a] font-bold text-base"
+            className="w-full h-14 rounded-[24px] bg-transparent border-2 border-[#5a5a4a]/40 text-white hover:bg-[#4a4a3a] font-bold text-base mb-3"
           >
             ADMIN PANEL →
+          </Button>
+
+          <Button
+            onClick={async () => {
+              if (confirm("Delete this game and start fresh?")) {
+                try {
+                  await Promise.all([
+                    base44.entities.Player.filter({ room_code: activeRoom.room_code })
+                      .then(players => Promise.all(players.map(p => base44.entities.Player.delete(p.id)))),
+                    base44.entities.RoomDraftPick.filter({ room_code: activeRoom.room_code })
+                      .then(picks => Promise.all(picks.map(p => base44.entities.RoomDraftPick.delete(p.id))))
+                  ]);
+                  await base44.entities.GameRoom.delete(activeRoom.id);
+                  setActiveRoom(null);
+                  toast.success("Game deleted");
+                } catch (error) {
+                  toast.error("Failed to delete game");
+                }
+              }
+            }}
+            variant="destructive"
+            className="w-full h-12 rounded-[24px]"
+          >
+            DELETE GAME
           </Button>
         </div>
       </div>
