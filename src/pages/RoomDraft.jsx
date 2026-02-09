@@ -27,21 +27,21 @@ export default function RoomDraft() {
     queryKey: ["room", roomCode],
     queryFn: () => base44.entities.GameRoom.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   const { data: players = [] } = useQuery({
     queryKey: ["players", roomCode],
     queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   const { data: roomPicks = [] } = useQuery({
     queryKey: ["roomPicks", roomCode],
     queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   const { data: brands = [] } = useQuery({
@@ -53,6 +53,7 @@ export default function RoomDraft() {
   // Filter out the host from players
   const gamePlayers = players.filter(p => room && p.user_email !== room.host_email);
   const sortedPlayers = [...gamePlayers].sort((a, b) => a.turn_order - b.turn_order);
+  const isHost = user && room && user.id === room.host_email;
   
   const pickedBrandIds = new Set(roomPicks.map(p => p.brand_id));
   const myPickedBrands = roomPicks.filter(p => p.user_email === user?.id).map(p => p.brand_id);
@@ -103,20 +104,27 @@ export default function RoomDraft() {
       
       setTimeRemaining(remaining);
 
-      if (remaining === 0 && isMyTurn) {
-        // Auto-pick a random brand if time runs out
-        if (availableBrands.length > 0 && !lockPickMutation.isPending) {
-          const randomBrand = availableBrands[Math.floor(Math.random() * availableBrands.length)];
-          setSelectedBrand(randomBrand);
-          setTimeout(() => {
-            lockPickMutation.mutate(randomBrand);
-          }, 100);
-        }
+      if (remaining === 0 && isMyTurn && !lockPickMutation.isPending) {
+        // Skip turn by advancing timer without picking
+        skipTurnMutation.mutate();
       }
     }, 1000);
 
     return () => clearInterval(interval);
   }, [room, currentTurnPlayer, isDraftComplete, isMyTurn, availableBrands]);
+
+  const skipTurnMutation = useMutation({
+    mutationFn: async () => {
+      // Just advance the turn timer without picking
+      await base44.entities.GameRoom.update(room.id, {
+        turn_started_at: new Date().toISOString(),
+      });
+      toast.error("⏱️ Time expired - turn skipped");
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["room"] });
+    },
+  });
 
   const lockPickMutation = useMutation({
     mutationFn: async (brand) => {
@@ -195,7 +203,26 @@ export default function RoomDraft() {
         <div className="bg-[#2d2d1e] border-b border-[#5a5a4a]/30 p-4">
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-white font-bold">Draft Order</h2>
-            <span className="text-[#a4a498] text-sm">Round {currentRound}/5</span>
+            <div className="flex items-center gap-2">
+              {isHost && (
+                <button
+                  onClick={() => {
+                    if (confirm("Force advance to next turn?")) {
+                      base44.entities.GameRoom.update(room.id, {
+                        turn_started_at: new Date().toISOString(),
+                      }).then(() => {
+                        queryClient.invalidateQueries({ queryKey: ["room"] });
+                        toast.success("Turn advanced");
+                      });
+                    }
+                  }}
+                  className="px-3 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/30"
+                >
+                  Unstuck
+                </button>
+              )}
+              <span className="text-[#a4a498] text-sm">Round {currentRound}/5</span>
+            </div>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-2">
             {sortedPlayers.map((player, idx) => {
@@ -278,10 +305,15 @@ export default function RoomDraft() {
 
         {/* Brands List */}
         <div className="p-4 space-y-2 pb-24">
-          {filteredBrands.map(brand => {
+          {brands.map(brand => {
             const isSelected = selectedBrand?.id === brand.id;
             const isPicked = pickedBrandIds.has(brand.id);
             const isMine = myPickedBrands.includes(brand.id);
+            const pickedByPlayer = roomPicks.find(p => p.brand_id === brand.id);
+            const pickedPlayer = pickedByPlayer ? players.find(p => p.user_email === pickedByPlayer.user_email) : null;
+            const showBrand = !isPicked || searchTerm === "" || brand.category === searchTerm;
+
+            if (!showBrand) return null;
 
             return (
               <motion.button
@@ -294,7 +326,7 @@ export default function RoomDraft() {
                 className={cn(
                   "w-full rounded-xl p-3 flex items-center gap-3 transition-all text-left",
                   isMine && "bg-green-500/20 border-2 border-green-400",
-                  isPicked && !isMine && "opacity-30 cursor-not-allowed",
+                  isPicked && !isMine && "opacity-50 bg-[#2d2d1e]/50 cursor-not-allowed border border-[#5a5a4a]/20",
                   !isPicked && !isMyTurn && "opacity-60",
                   !isPicked && isMyTurn && "hover:bg-[#4a4a3a]/40",
                   isSelected && "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20 border-2 border-[#f4c542]",
@@ -315,6 +347,11 @@ export default function RoomDraft() {
                 <div className="flex-1">
                   <p className="font-bold text-white">{brand.brand_name}</p>
                   <p className="text-xs text-[#a4a498]">{brand.category}</p>
+                  {isPicked && pickedPlayer && (
+                    <p className="text-[10px] text-[#f4c542] mt-1">
+                      {getPlayerIcon(pickedPlayer)} {pickedPlayer.display_name}
+                    </p>
+                  )}
                 </div>
                 {isMine && <CheckCircle className="w-5 h-5 text-green-400" />}
                 {isPicked && !isMine && <Lock className="w-4 h-4 text-[#a4a498]" />}

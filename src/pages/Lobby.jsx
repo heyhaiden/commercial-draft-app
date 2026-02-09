@@ -26,14 +26,14 @@ export default function Lobby() {
     queryKey: ["room", roomCode],
     queryFn: () => base44.entities.GameRoom.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   const { data: players = [] } = useQuery({
     queryKey: ["players", roomCode],
     queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
     enabled: !!roomCode,
-    refetchInterval: 2000,
+    refetchInterval: 5000,
   });
 
   const room = rooms[0];
@@ -228,10 +228,10 @@ export default function Lobby() {
         ) : (
           <Button
             onClick={() => toggleReadyMutation.mutate()}
-            disabled={toggleReadyMutation.isPending}
+            disabled={toggleReadyMutation.isPending || myPlayer?.ready}
             className={`w-full h-16 rounded-[24px] font-bold text-lg flex items-center justify-center gap-3 ${
               myPlayer?.ready
-                ? "bg-green-600 hover:bg-green-500 text-white"
+                ? "bg-gray-600 text-gray-300 cursor-not-allowed"
                 : "bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e]"
             }`}
           >
