@@ -93,55 +93,59 @@ export default function JoinGame() {
         <p className="text-[#a4a498] text-center text-sm mb-6">Ask the host for the 4-digit game ID</p>
 
         {/* Code Display */}
-        <div className="mb-6">
-          <div className="h-16 rounded-3xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 flex items-center justify-center px-6 gap-2">
+        <div className="mb-4">
+          <div className="flex items-center justify-center gap-3">
             {[0, 1, 2, 3].map((i) => (
-              <span key={i} className="text-4xl font-bold text-white">
-                {code[i] || ""}
-              </span>
+              <div
+                key={i}
+                className="w-14 h-16 rounded-2xl bg-[#4a4a3a]/20 border-2 border-[#5a5a4a]/30 flex items-center justify-center"
+              >
+                <span className="text-3xl font-bold text-white">
+                  {code[i] || ""}
+                </span>
+              </div>
             ))}
-            <div className="w-1 h-10 bg-[#f4c542] animate-pulse ml-2" />
           </div>
         </div>
 
         {/* Number Pad */}
-        <div className="grid grid-cols-3 gap-2 mb-6">
+        <div className="grid grid-cols-3 gap-2 mb-3">
           {buttons.map(({ num, letters }) => (
             <button
               key={num}
               onClick={() => handleKeyPress(num)}
-              className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex flex-col items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+              className="h-14 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex flex-col items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
             >
-              <span className="text-xl font-bold">{num}</span>
-              {letters && <span className="text-[10px] text-[#a4a498] mt-0.5">{letters}</span>}
+              <span className="text-lg font-bold">{num}</span>
+              {letters && <span className="text-[9px] text-[#a4a498]">{letters}</span>}
             </button>
           ))}
         </div>
 
         {/* Bottom Row */}
-        <div className="grid grid-cols-3 gap-2 mb-auto">
+        <div className="grid grid-cols-3 gap-2 mb-4">
           <button
             onClick={handleClear}
-            className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+            className="h-14 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <span className="text-[10px] text-[#a4a498]">CLEAR</span>
+            <span className="text-[9px] text-[#a4a498]">CLEAR</span>
           </button>
           <button
             onClick={() => handleKeyPress("0")}
-            className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+            className="h-14 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <span className="text-xl font-bold">0</span>
+            <span className="text-lg font-bold">0</span>
           </button>
           <button
             onClick={handleBackspace}
-            className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
+            className="h-14 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Join Button */}
-        <div className="mt-6">
+        <div>
           <Button
             onClick={handleJoin}
             disabled={code.length !== 4}
