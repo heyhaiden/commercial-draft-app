@@ -50,16 +50,7 @@ export default function MyDraft() {
 
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
 
-  // Check if game is complete
-  const allBrandsRated = brands.every(b => !b.aired || b.total_ratings > 0);
-  const isGameComplete = brands.filter(b => b.aired).length > 0 && allBrandsRated;
 
-  useEffect(() => {
-    if (isGameComplete && !hasShownScorecard) {
-      setShowScorecard(true);
-      setHasShownScorecard(true);
-    }
-  }, [isGameComplete, hasShownScorecard]);
 
   const playerIcon = "🏈"; // Get from player data
   const playerData = user ? {
@@ -179,13 +170,6 @@ export default function MyDraft() {
         })}
       </div>
 
-      <SeasonScorecard
-        show={showScorecard}
-        onClose={() => setShowScorecard(false)}
-        playerData={playerData}
-        brands={brands}
-      />
-      
       <OnboardingTooltip
         show={showOnboarding}
         onComplete={() => setShowOnboarding(false)}

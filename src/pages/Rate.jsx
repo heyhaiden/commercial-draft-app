@@ -33,13 +33,26 @@ export default function Rate() {
   const airingBrand = brands.find(b => b.is_airing);
   const ratedIds = new Set(myRatings.map(r => r.brand_id));
 
+  const [ratingTimer, setRatingTimer] = useState(null);
+
   // Auto-show popup when brand starts airing
   useEffect(() => {
     if (airingBrand && !ratedIds.has(airingBrand.id) && !showRating) {
       setShowRating(airingBrand);
       setSelectedStars(0);
+      setRatingTimer(120); // 2 minutes
     }
   }, [airingBrand?.id]);
+
+  // Rating countdown timer
+  useEffect(() => {
+    if (ratingTimer !== null && ratingTimer > 0 && showRating) {
+      const interval = setInterval(() => {
+        setRatingTimer(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(interval);
+    }
+  }, [ratingTimer, showRating]);
 
   const rateMutation = useMutation({
     mutationFn: async ({ brandId, stars }) => {
@@ -65,6 +78,7 @@ export default function Rate() {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
       setShowRating(null);
       setSelectedStars(0);
+      setRatingTimer(null);
     },
   });
 
@@ -209,16 +223,23 @@ export default function Rate() {
 
                 <div className="mt-4 text-center">
                   <p className="text-[#a4a498] text-xs">TIME REMAINING</p>
-                  <p className="text-[#f4c542] text-lg font-bold">01:45</p>
+                  <p className={`text-lg font-bold ${ratingTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
+                    {ratingTimer !== null ? `${Math.floor(ratingTimer / 60)}:${String(ratingTimer % 60).padStart(2, '0')}` : '2:00'}
+                  </p>
                 </div>
               </div>
 
-              <button
-                onClick={() => setShowRating(null)}
-                className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#2d2d1e]/80 flex items-center justify-center"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              {!ratedIds.has(showRating.id) && (
+                <button
+                  onClick={() => {
+                    setShowRating(null);
+                    setRatingTimer(null);
+                  }}
+                  className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#2d2d1e]/80 flex items-center justify-center"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
             </motion.div>
           </motion.div>
         )}

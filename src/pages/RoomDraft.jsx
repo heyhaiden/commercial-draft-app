@@ -55,9 +55,10 @@ export default function RoomDraft() {
   const sortedPlayers = [...gamePlayers].sort((a, b) => a.turn_order - b.turn_order);
   
   const pickedBrandIds = new Set(roomPicks.map(p => p.brand_id));
+  const myPickedBrands = roomPicks.filter(p => p.user_email === user?.id).map(p => p.brand_id);
   const availableBrands = brands.filter(b => !pickedBrandIds.has(b.id));
   const filteredBrands = availableBrands.filter(b => 
-    b.brand_name.toLowerCase().includes(searchTerm.toLowerCase())
+    searchTerm === "" || b.category === searchTerm
   );
 
   // Calculate current turn
@@ -196,7 +197,7 @@ export default function RoomDraft() {
             <h2 className="text-white font-bold">Draft Order</h2>
             <span className="text-[#a4a498] text-sm">Round {currentRound}/5</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-2">
             {sortedPlayers.map((player, idx) => {
               const isCurrent = currentTurnPlayer?.user_email === player.user_email;
               const playerPicks = roomPicks.filter(p => p.user_email === player.user_email).length;
@@ -207,7 +208,7 @@ export default function RoomDraft() {
                   key={player.id}
                   className={cn(
                     "flex-shrink-0 w-16 rounded-xl p-2 text-center transition-all",
-                    isCurrent && "bg-gradient-to-br from-[#f4c542]/30 to-[#d4a532]/30 border-2 border-[#f4c542] scale-110",
+                    isCurrent && "bg-gradient-to-br from-[#f4c542]/30 to-[#d4a532]/30 border-2 border-[#f4c542]",
                     !isCurrent && hasCompleted && "opacity-40",
                     !isCurrent && !hasCompleted && "bg-[#3d3d2e]"
                   )}
@@ -255,25 +256,32 @@ export default function RoomDraft() {
           </div>
         </div>
 
-        {/* Search */}
+        {/* Category Filter */}
         <div className="p-4 border-b border-[#5a5a4a]/30">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#a4a498]" />
-            <input
-              type="text"
-              placeholder="Search brands..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 rounded-xl bg-[#2d2d1e] border border-[#5a5a4a]/30 text-white placeholder-[#a4a498] text-sm"
-            />
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {["All Brands", "Tech", "Auto", "Food & Beverage", "Entertainment", "Other"].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSearchTerm(cat === "All Brands" ? "" : cat)}
+                className={cn(
+                  "flex-shrink-0 px-4 py-2 rounded-full font-medium text-sm transition-all",
+                  (cat === "All Brands" && searchTerm === "") || searchTerm === cat
+                    ? "bg-gradient-to-r from-[#f4c542] to-[#d4a532] text-[#2d2d1e]"
+                    : "bg-[#2d2d1e] text-[#a4a498] hover:text-white"
+                )}
+              >
+                {cat}
+              </button>
+            ))}
           </div>
         </div>
 
         {/* Brands List */}
-        <div className="p-4 space-y-2">
+        <div className="p-4 space-y-2 pb-24">
           {filteredBrands.map(brand => {
             const isSelected = selectedBrand?.id === brand.id;
             const isPicked = pickedBrandIds.has(brand.id);
+            const isMine = myPickedBrands.includes(brand.id);
 
             return (
               <motion.button
@@ -285,11 +293,12 @@ export default function RoomDraft() {
                 disabled={!isMyTurn || isPicked}
                 className={cn(
                   "w-full rounded-xl p-3 flex items-center gap-3 transition-all text-left",
-                  isPicked && "opacity-30 cursor-not-allowed",
+                  isMine && "bg-green-500/20 border-2 border-green-400",
+                  isPicked && !isMine && "opacity-30 cursor-not-allowed",
                   !isPicked && !isMyTurn && "opacity-60",
                   !isPicked && isMyTurn && "hover:bg-[#4a4a3a]/40",
                   isSelected && "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20 border-2 border-[#f4c542]",
-                  !isSelected && !isPicked && "bg-[#2d2d1e] border border-[#5a5a4a]/30"
+                  !isSelected && !isPicked && !isMine && "bg-[#2d2d1e] border border-[#5a5a4a]/30"
                 )}
               >
                 <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-2 flex-shrink-0">
@@ -307,7 +316,8 @@ export default function RoomDraft() {
                   <p className="font-bold text-white">{brand.brand_name}</p>
                   <p className="text-xs text-[#a4a498]">{brand.category}</p>
                 </div>
-                {isPicked && <Lock className="w-4 h-4 text-[#a4a498]" />}
+                {isMine && <CheckCircle className="w-5 h-5 text-green-400" />}
+                {isPicked && !isMine && <Lock className="w-4 h-4 text-[#a4a498]" />}
               </motion.button>
             );
           })}

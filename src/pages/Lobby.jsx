@@ -171,7 +171,7 @@ export default function Lobby() {
         <div className="mb-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-bold text-xl">Lobby Roster</h2>
-            <span className="text-[#a4a498] text-sm">{players.length}/{room.max_players} Joined</span>
+            <span className="text-[#a4a498] text-sm">{players.filter(p => p.user_email !== room.host_email).length}/{room.max_players} Joined</span>
           </div>
 
           <div className="space-y-2">
