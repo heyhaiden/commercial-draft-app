@@ -40,16 +40,6 @@ export default function CreateRoom() {
       const userIdentity = await getUserIdentity(base44);
       const code = generateCode();
       
-      // Delete all existing players and picks for fresh start
-      const allPlayers = await base44.entities.Player.list("-created_date", 1000);
-      for (const player of allPlayers) {
-        await base44.entities.Player.delete(player.id);
-      }
-      const allRoomPicks = await base44.entities.RoomDraftPick.list("-created_date", 1000);
-      for (const pick of allRoomPicks) {
-        await base44.entities.RoomDraftPick.delete(pick.id);
-      }
-      
       await base44.entities.GameRoom.create({
         room_code: code,
         host_email: userIdentity.id,
