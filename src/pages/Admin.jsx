@@ -106,11 +106,6 @@ export default function Admin() {
 
   const uniqueUsers = new Set(allPicks.map(p => p.user_email)).size;
 
-  if (!user) return null;
-
-  const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState("all");
-
   const { data: rooms = [] } = useQuery({
     queryKey: ["gameRooms"],
     queryFn: () => base44.entities.GameRoom.list("-created_date", 1),
@@ -132,6 +127,8 @@ export default function Admin() {
       toast.success("Room code copied!");
     }
   };
+
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-[#3d3d2e] text-white">
