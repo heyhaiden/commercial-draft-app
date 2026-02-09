@@ -73,42 +73,9 @@ export default function Leaderboard() {
       <div className="max-w-md mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-black">LIVE SCORING</h1>
-          <button className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
-            <Search className="w-5 h-5" />
-          </button>
         </div>
 
-        {/* Trending Ad */}
-        {brands.filter(b => b.aired).length > 0 && (
-          <div className="mb-8">
-            <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded-lg bg-orange-500/20 flex items-center justify-center">
-                🔥
-              </div>
-              <h2 className="font-bold">Trending Ad</h2>
-            </div>
-            {(() => {
-              const topBrand = brands.filter(b => b.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))[0];
-              return (
-                <div className="rounded-3xl bg-gradient-to-r from-[#4a4a3a]/40 to-[#3a3a2a]/40 border border-[#5a5a4a]/30 p-4 relative overflow-hidden">
-                  <div className="absolute top-3 left-3 bg-[#f4c542] text-[#2d2d1e] text-xs font-bold px-2 py-1 rounded-full">#1 RATED</div>
-                  <div className="mt-6 flex items-center gap-3">
-                    <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 p-2">
-                      <img src={topBrand.logo_url} alt={topBrand.brand_name} className="w-full h-full object-contain" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="font-black text-lg text-white">{topBrand.brand_name} - {topBrand.title}</p>
-                      <div className="flex items-center gap-1 mt-1">
-                        <span className="text-yellow-400 text-base">⭐</span>
-                        <span className="font-bold text-sm">{(topBrand.average_rating || 0).toFixed(1)}/5</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
-        )}
+
 
         {/* Top 3 Podium */}
         {hasAnyRatings && leaderboard.length >= 3 && (

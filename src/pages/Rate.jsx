@@ -35,7 +35,7 @@ export default function Rate() {
 
   const [ratingTimer, setRatingTimer] = useState(null);
 
-  // Auto-show popup when brand starts airing
+  // Auto-show popup when brand starts airing and navigate to Rate tab
   useEffect(() => {
     if (airingBrand && !ratedIds.has(airingBrand.id) && !showRating) {
       setShowRating(airingBrand);
@@ -43,6 +43,17 @@ export default function Rate() {
       setRatingTimer(120); // 2 minutes
     }
   }, [airingBrand?.id]);
+
+  // Subscribe to brand changes
+  useEffect(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+      if (event.type === 'update' && event.data.is_airing && !ratedIds.has(event.data.id)) {
+        // Force navigation to Rate tab when ad starts airing
+        window.location.hash = '#/Rate';
+      }
+    });
+    return unsubscribe;
+  }, [ratedIds]);
 
   // Rating countdown timer
   useEffect(() => {
@@ -54,6 +65,17 @@ export default function Rate() {
     }
   }, [ratingTimer, showRating]);
 
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ["allPlayers"],
+    queryFn: () => base44.entities.Player.list("-created_date", 1000),
+  });
+
+  const { data: allRatingsForBrand = [] } = useQuery({
+    queryKey: ["allRatingsForBrand", showRating?.id],
+    queryFn: () => base44.entities.Rating.filter({ brand_id: showRating.id }),
+    enabled: !!showRating,
+  });
+
   const rateMutation = useMutation({
     mutationFn: async ({ brandId, stars }) => {
       const brand = brands.find(b => b.id === brandId);
@@ -64,18 +86,31 @@ export default function Rate() {
         brand_name: brand?.brand_name || "",
         stars,
       });
-      const newTotal = (brand.total_ratings || 0) + 1;
-      const newAvg = (((brand.average_rating || 0) * (brand.total_ratings || 0)) + stars) / newTotal;
-      const newPoints = Math.round(newAvg * 20) - 10;
-      await base44.entities.Brand.update(brandId, {
-        average_rating: Math.round(newAvg * 100) / 100,
-        total_ratings: newTotal,
-        points: newPoints,
-      });
+      
+      // Check if all players have rated
+      const currentRatings = await base44.entities.Rating.filter({ brand_id: brandId });
+      const totalPlayers = allPlayers.length;
+      
+      if (currentRatings.length + 1 >= totalPlayers) {
+        // All players have rated - calculate final score and stop airing
+        const allStars = [...currentRatings.map(r => r.stars), stars];
+        const finalAvg = allStars.reduce((sum, s) => sum + s, 0) / allStars.length;
+        const finalPoints = Math.round(finalAvg * 20) - 10;
+        
+        await base44.entities.Brand.update(brandId, {
+          is_airing: false,
+          aired: true,
+          average_rating: Math.round(finalAvg * 100) / 100,
+          total_ratings: allStars.length,
+          points: finalPoints,
+        });
+        toast.success("All players rated! Ad complete.");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myRatings"] });
       queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand"] });
       setShowRating(null);
       setSelectedStars(0);
       setRatingTimer(null);
@@ -99,7 +134,7 @@ export default function Rate() {
           <div className="rounded-3xl bg-gradient-to-r from-red-500/20 to-orange-500/20 border border-red-400/30 p-4 mb-6 animate-pulse">
             <div className="flex items-center gap-2 mb-2">
               <div className="w-2 h-2 rounded-full bg-red-500" />
-              <p className="text-red-400 text-sm font-bold">TRENDING AD</p>
+              <p className="text-red-400 text-sm font-bold">ACTIVE AD</p>
             </div>
             <div className="flex items-center gap-3">
               <div className="w-16 h-16 rounded-xl bg-white flex items-center justify-center p-2">

@@ -15,7 +15,20 @@ export default function CreateRoom() {
   const [snakeDraft, setSnakeDraft] = useState(true);
   const [roomCode, setRoomCode] = useState(null);
   const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [activeRoom, setActiveRoom] = useState(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    async function checkActiveRoom() {
+      const rooms = await base44.entities.GameRoom.list("-created_date", 1);
+      if (rooms.length > 0 && rooms[0].status !== "completed") {
+        setActiveRoom(rooms[0]);
+      }
+      setLoading(false);
+    }
+    checkActiveRoom();
+  }, []);
 
   const generateCode = () => {
     return Math.floor(1000 + Math.random() * 9000).toString();
@@ -26,6 +39,16 @@ export default function CreateRoom() {
     try {
       const userIdentity = await getUserIdentity(base44);
       const code = generateCode();
+      
+      // Delete all existing players and picks for fresh start
+      const allPlayers = await base44.entities.Player.list("-created_date", 1000);
+      for (const player of allPlayers) {
+        await base44.entities.Player.delete(player.id);
+      }
+      const allRoomPicks = await base44.entities.RoomDraftPick.list("-created_date", 1000);
+      for (const pick of allRoomPicks) {
+        await base44.entities.RoomDraftPick.delete(pick.id);
+      }
       
       await base44.entities.GameRoom.create({
         room_code: code,
@@ -52,8 +75,52 @@ export default function CreateRoom() {
   };
 
   const goToLobby = () => {
-    navigate(createPageUrl("ProfileSetup") + `?code=${roomCode}`);
+    navigate(createPageUrl("Lobby") + `?code=${roomCode}`);
   };
+
+  if (loading) {
+    return <div className="min-h-screen bg-[#3d3d2e] flex items-center justify-center"><p className="text-white">Loading...</p></div>;
+  }
+
+  if (activeRoom) {
+    return (
+      <div className="min-h-screen bg-[#3d3d2e] text-white pb-20 flex flex-col">
+        <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
+          <div className="flex items-center justify-between mb-6">
+            <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <h1 className="text-[#a4a498] text-xs font-medium tracking-wider">ACTIVE GAME</h1>
+            <div className="w-10" />
+          </div>
+
+          <div className="flex justify-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
+              <Gamepad2 className="w-8 h-8 text-[#2d2d1e]" />
+            </div>
+          </div>
+
+          <h2 className="text-3xl font-black italic text-center mb-3">GAME IN PROGRESS</h2>
+          <p className="text-[#a4a498] text-center text-sm mb-8">Room Code: {activeRoom.room_code}</p>
+
+          <Button
+            onClick={() => navigate(createPageUrl("Lobby") + `?code=${activeRoom.room_code}`)}
+            className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3"
+          >
+            GO TO LOBBY →
+          </Button>
+
+          <Button
+            onClick={() => navigate(createPageUrl("Admin"))}
+            variant="outline"
+            className="w-full h-14 rounded-[24px] bg-transparent border-2 border-[#5a5a4a]/40 text-white hover:bg-[#4a4a3a] font-bold text-base"
+          >
+            ADMIN PANEL →
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (roomCode) {
     return (

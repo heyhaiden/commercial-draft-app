@@ -80,7 +80,22 @@ export default function Admin() {
       // Stop any currently airing
       const currentlyAiring = brands.filter(b => b.is_airing);
       for (const b of currentlyAiring) {
-        await base44.entities.Brand.update(b.id, { is_airing: false, aired: true });
+        // Calculate final average from all ratings
+        const brandRatings = allRatings.filter(r => r.brand_id === b.id);
+        if (brandRatings.length > 0) {
+          const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
+          const finalAvg = totalStars / brandRatings.length;
+          const finalPoints = Math.round(finalAvg * 20) - 10;
+          await base44.entities.Brand.update(b.id, {
+            is_airing: false,
+            aired: true,
+            average_rating: Math.round(finalAvg * 100) / 100,
+            total_ratings: brandRatings.length,
+            points: finalPoints,
+          });
+        } else {
+          await base44.entities.Brand.update(b.id, { is_airing: false, aired: true });
+        }
       }
       // Start new one
       await base44.entities.Brand.update(brandId, {
@@ -97,7 +112,22 @@ export default function Admin() {
 
   const stopAiringMutation = useMutation({
     mutationFn: async (brandId) => {
-      await base44.entities.Brand.update(brandId, { is_airing: false, aired: true });
+      // Calculate final average from all ratings
+      const brandRatings = allRatings.filter(r => r.brand_id === brandId);
+      if (brandRatings.length > 0) {
+        const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
+        const finalAvg = totalStars / brandRatings.length;
+        const finalPoints = Math.round(finalAvg * 20) - 10;
+        await base44.entities.Brand.update(brandId, {
+          is_airing: false,
+          aired: true,
+          average_rating: Math.round(finalAvg * 100) / 100,
+          total_ratings: brandRatings.length,
+          points: finalPoints,
+        });
+      } else {
+        await base44.entities.Brand.update(brandId, { is_airing: false, aired: true });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
@@ -155,7 +185,12 @@ export default function Admin() {
     },
   });
 
-  const uniqueUsers = new Set(allPicks.map(p => p.user_email)).size;
+  const { data: allPlayers = [] } = useQuery({
+    queryKey: ["allPlayers"],
+    queryFn: () => base44.entities.Player.list("-created_date", 1000),
+  });
+
+  const uniqueUsers = allPlayers.length;
 
   const { data: rooms = [] } = useQuery({
     queryKey: ["gameRooms"],
@@ -273,9 +308,12 @@ export default function Admin() {
                   <p className="text-white/40 text-xs truncate">{brand.title}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {brand.aired && (
-                    <span className="text-xs text-white/40">⭐ {(brand.average_rating || 0).toFixed(1)} ({brand.total_ratings || 0})</span>
-                  )}
+                 {brand.aired && (
+                   <div className="flex items-center gap-2">
+                     <span className="text-xs text-white/40">⭐ {(brand.average_rating || 0).toFixed(1)}</span>
+                     <span className="text-xs text-[#f4c542]">({allRatings.filter(r => r.brand_id === brand.id).length}/{uniqueUsers})</span>
+                   </div>
+                 )}
                   {brand.is_airing ? (
                     <Button size="sm" variant="destructive" onClick={() => stopAiringMutation.mutate(brand.id)} className="rounded-lg">
                       <Square className="w-3 h-3 mr-1" /> Stop

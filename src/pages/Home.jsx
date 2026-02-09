@@ -99,22 +99,20 @@ export default function Home() {
           </motion.div>
         </motion.div>
 
-        {/* Admin Link */}
-        {user?.role === "admin" && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.8 }}
-            className="absolute bottom-8"
-          >
-            <Link to={createPageUrl("CreateRoom")}>
-              <button className="flex items-center gap-2 text-[#a4a498] hover:text-white transition-colors text-sm">
-                <Shield className="w-4 h-4" />
-                Admin & Host Access
-              </button>
-            </Link>
-          </motion.div>
-        )}
+        {/* Admin Link - Available to All */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.8 }}
+          className="absolute bottom-8"
+        >
+          <Link to={createPageUrl("CreateRoom")}>
+            <button className="flex items-center gap-2 text-[#a4a498] hover:text-white transition-colors text-sm">
+              <Shield className="w-4 h-4" />
+              Admin & Host Access
+            </button>
+          </Link>
+        </motion.div>
       </div>
 
       <HowToPlayModal show={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
