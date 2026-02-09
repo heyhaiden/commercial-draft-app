@@ -102,7 +102,7 @@ export default function Home() {
               <Button
                 onClick={() => setShowHowToPlay(true)}
                 variant="outline"
-                className="w-[55%] mx-auto h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542] hover:bg-[#f4c542]/10 text-[#d4d4c8] hover:text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all"
+                className="w-11/12 mx-auto h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542] hover:bg-[#f4c542]/10 text-[#d4d4c8] hover:text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all"
               >
                 <BookOpen className="w-4 h-4" />
                 How to Play
