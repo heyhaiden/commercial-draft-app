@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { Link } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { motion } from "framer-motion";
-import { Trophy, Play, Shield, HelpCircle } from "lucide-react";
+import { Trophy, Shield, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import HowToPlayModal from "@/components/common/HowToPlayModal";
 
@@ -22,17 +22,6 @@ export default function Home() {
       <div className="fixed inset-0 bg-gradient-to-b from-[#3d3d2e] via-[#2d2d1e] to-[#1d1d0e] pointer-events-none" />
       
       <div className="relative max-w-md mx-auto px-6 py-8 flex flex-col items-center justify-center min-h-screen">
-        {/* How to Play Button */}
-        <motion.button
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          onClick={() => setShowHowToPlay(true)}
-          className="absolute top-6 right-6 w-12 h-12 rounded-full bg-[#4a4a3a]/40 hover:bg-[#5a5a4a]/40 border border-[#5a5a4a]/50 backdrop-blur-sm flex items-center justify-center transition-all hover:scale-110"
-        >
-          <HelpCircle className="w-6 h-6 text-[#f4c542]" />
-        </motion.button>
-
         {/* Live Badge */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -102,6 +91,23 @@ export default function Home() {
                 SIGN IN TO PLAY
               </Button>
             )}
+
+            {/* How to Play Button */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="mt-3"
+            >
+              <Button
+                onClick={() => setShowHowToPlay(true)}
+                variant="outline"
+                className="w-full h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542]/60 hover:bg-[#4a4a3a]/20 text-[#d4d4c8] font-semibold text-sm flex items-center justify-center gap-2"
+              >
+                <BookOpen className="w-4 h-4" />
+                Game Rules / How to Play
+              </Button>
+            </motion.div>
           </motion.div>
         )}
 
@@ -110,8 +116,8 @@ export default function Home() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 0.7 }}
-            className="mt-4"
+            transition={{ delay: 0.8 }}
+            className="absolute bottom-8"
           >
             <Link to={createPageUrl("CreateRoom")}>
               <button className="flex items-center gap-2 text-[#a4a498] hover:text-white transition-colors text-sm">
@@ -121,16 +127,6 @@ export default function Home() {
             </Link>
           </motion.div>
         )}
-
-        {/* Version */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.8 }}
-          className="mt-4 text-[#6a6a5a] text-xs"
-        >
-          VERSION 2.4.0 • BUILD 892
-        </motion.p>
       </div>
 
       <HowToPlayModal show={showHowToPlay} onClose={() => setShowHowToPlay(false)} />
