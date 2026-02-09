@@ -200,6 +200,11 @@ export default function Admin() {
     },
   });
 
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["gameRooms"],
+    queryFn: () => base44.entities.GameRoom.list("-created_date", 1),
+  });
+
   const { data: allPlayers = [] } = useQuery({
     queryKey: ["allPlayers"],
     queryFn: () => base44.entities.Player.list("-created_date", 1000),
@@ -209,11 +214,6 @@ export default function Admin() {
   const currentRoomCode = rooms[0]?.room_code;
   const currentRoomPlayers = allPlayers.filter(p => p.room_code === currentRoomCode);
   const uniqueUsers = currentRoomPlayers.length;
-
-  const { data: rooms = [] } = useQuery({
-    queryKey: ["gameRooms"],
-    queryFn: () => base44.entities.GameRoom.list("-created_date", 1),
-  });
 
   const filteredBrands = brands.filter(b => {
     const matchesSearch = b.brand_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
