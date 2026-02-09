@@ -176,17 +176,13 @@ export default function Admin() {
       const currentRoom = rooms[0];
       if (!currentRoom) return;
       
-      // Delete all players in this room
-      const roomPlayers = await base44.entities.Player.filter({ room_code: currentRoom.room_code });
-      for (const player of roomPlayers) {
-        await base44.entities.Player.delete(player.id);
-      }
-      
-      // Delete all draft picks in this room
-      const roomPicks = await base44.entities.RoomDraftPick.filter({ room_code: currentRoom.room_code });
-      for (const pick of roomPicks) {
-        await base44.entities.RoomDraftPick.delete(pick.id);
-      }
+      // Bulk delete all players and picks in parallel
+      await Promise.all([
+        base44.entities.Player.filter({ room_code: currentRoom.room_code })
+          .then(players => Promise.all(players.map(p => base44.entities.Player.delete(p.id)))),
+        base44.entities.RoomDraftPick.filter({ room_code: currentRoom.room_code })
+          .then(picks => Promise.all(picks.map(p => base44.entities.RoomDraftPick.delete(p.id))))
+      ]);
       
       // Delete the room
       await base44.entities.GameRoom.delete(currentRoom.id);
