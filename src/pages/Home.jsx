@@ -102,10 +102,10 @@ export default function Home() {
               <Button
                 onClick={() => setShowHowToPlay(true)}
                 variant="outline"
-                className="w-full h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542]/60 hover:bg-[#4a4a3a]/20 text-[#d4d4c8] font-semibold text-sm flex items-center justify-center gap-2"
+                className="w-full h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542] hover:bg-[#f4c542]/10 text-[#d4d4c8] hover:text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all"
               >
                 <BookOpen className="w-4 h-4" />
-                Game Rules / How to Play
+                How to Play
               </Button>
             </motion.div>
           </motion.div>
