@@ -70,27 +70,27 @@ export default function JoinGame() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#3d3d2e] text-white pb-20">
-      <div className="max-w-md mx-auto px-6 py-8">
+    <div className="min-h-screen bg-[#3d3d2e] text-white pb-20 flex flex-col">
+      <div className="max-w-md mx-auto px-6 py-6 flex-1 flex flex-col justify-center">
         {/* Header */}
-        <div className="flex items-center justify-between mb-12">
-          <button onClick={() => navigate(-1)} className="w-12 h-12 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
-            <ArrowLeft className="w-5 h-5" />
+        <div className="flex items-center justify-between mb-6">
+          <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-[#a4a498] text-sm font-medium tracking-wider">JOIN GAME</h1>
-          <div className="w-12" />
+          <h1 className="text-[#a4a498] text-xs font-medium tracking-wider">JOIN GAME</h1>
+          <div className="w-10" />
         </div>
 
         {/* Icon */}
         <div className="flex justify-center mb-6">
-          <div className="w-14 h-14 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 flex items-center justify-center">
-            <Bookmark className="w-6 h-6 text-[#f4c542]" />
+          <div className="w-16 h-16 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 flex items-center justify-center">
+            <Bookmark className="w-7 h-7 text-[#f4c542]" />
           </div>
         </div>
 
         {/* Title */}
         <h2 className="text-3xl font-black italic text-center mb-3">ENTER ROOM CODE</h2>
-        <p className="text-[#a4a498] text-center mb-8">Ask the host for the 4-digit game ID</p>
+        <p className="text-[#a4a498] text-center text-sm mb-8">Ask the host for the 4-digit game ID</p>
 
         {/* Code Display */}
         <div className="mb-8">
@@ -141,21 +141,18 @@ export default function JoinGame() {
         </div>
 
         {/* Join Button */}
-        <Button
-          onClick={handleJoin}
-          disabled={code.length !== 4}
-          className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
-        >
-          JOIN LOBBY
-          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </Button>
-
-        {/* QR Option */}
-        <p className="text-center text-[#a4a498] text-sm mt-6">
-          Scan QR Code instead?
-        </p>
+        <div className="mt-auto">
+          <Button
+            onClick={handleJoin}
+            disabled={code.length !== 4}
+            className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base disabled:opacity-30 flex items-center justify-center gap-3"
+          >
+            JOIN LOBBY
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 7l5 5m0 0l-5 5m5-5H6" />
+            </svg>
+          </Button>
+        </div>
       </div>
     </div>
   );

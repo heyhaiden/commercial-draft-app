@@ -102,7 +102,7 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               <div className="space-y-3 mb-6">
                 {mvpPick && (
                   <div className="rounded-2xl bg-gradient-to-r from-[#f4c542]/10 to-[#d4a532]/10 border border-[#f4c542]/30 p-4 flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-white flex items-center justify-center p-2">
+                    <div className="w-12 h-12 rounded-lg bg-white flex items-center justify-center p-2">
                       <img src={mvpPick.logo_url} alt={mvpPick.brand_name} className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1">
