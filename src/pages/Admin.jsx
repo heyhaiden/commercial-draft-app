@@ -3,10 +3,11 @@ import { base44 } from "@/api/base44Client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tv, Play, Square, CheckCircle, Settings, Users, BarChart3, ArrowLeft } from "lucide-react";
+import { Tv, Play, Square, CheckCircle, Settings, Users, BarChart3, ArrowLeft, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import { BrandCardSkeleton, StatCardSkeleton } from "@/components/common/LoadingSkeleton";
 
 export default function Admin() {
   const [user, setUser] = useState(null);
@@ -24,7 +25,7 @@ export default function Admin() {
     }).catch(() => base44.auth.redirectToLogin());
   }, []);
 
-  const { data: brands = [] } = useQuery({
+  const { data: brands = [], isLoading: brandsLoading } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list("brand_name", 100),
     refetchInterval: 3000,
@@ -223,16 +224,20 @@ export default function Admin() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-3 mb-8">
-          {[
-            { label: "Players", value: uniqueUsers },
-            { label: "Aired", value: brands.filter(b => b.aired).length },
-            { label: "Left", value: brands.filter(b => !b.aired && !b.is_airing).length },
-          ].map(({ label, value }) => (
-            <div key={label} className="p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
-              <p className="text-3xl font-black text-[#f4c542]">{value}</p>
-              <p className="text-[#a4a498] text-sm mt-1">{label}</p>
-            </div>
-          ))}
+          {brandsLoading ? (
+            Array.from({ length: 3 }).map((_, idx) => <StatCardSkeleton key={idx} />)
+          ) : (
+            [
+              { label: "Players", value: uniqueUsers },
+              { label: "Aired", value: brands.filter(b => b.aired).length },
+              { label: "Left", value: brands.filter(b => !b.aired && !b.is_airing).length },
+            ].map(({ label, value }) => (
+              <div key={label} className="p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
+                <p className="text-3xl font-black text-[#f4c542]">{value}</p>
+                <p className="text-[#a4a498] text-sm mt-1">{label}</p>
+              </div>
+            ))
+          )}
         </div>
 
         {/* Commercial Air Control */}
@@ -266,7 +271,10 @@ export default function Admin() {
           </div>
 
           <div className="space-y-2">
-            {filteredBrands.map(brand => (
+            {brandsLoading ? (
+              Array.from({ length: 5 }).map((_, idx) => <BrandCardSkeleton key={idx} />)
+            ) : (
+              filteredBrands.map(brand => (
               <div key={brand.id} className={cn(
                 "flex items-center gap-3 p-3 rounded-xl border transition-all",
                 brand.is_airing ? "bg-red-500/20 border-red-400/50" :
@@ -313,7 +321,8 @@ export default function Admin() {
                   )}
                 </div>
               </div>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </div>
