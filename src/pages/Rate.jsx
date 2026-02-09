@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getUserIdentity } from "@/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
@@ -14,7 +15,7 @@ export default function Rate() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    getUserIdentity(base44).then(setUser);
   }, []);
 
   const { data: brands = [] } = useQuery({
@@ -24,8 +25,8 @@ export default function Rate() {
   });
 
   const { data: myRatings = [] } = useQuery({
-    queryKey: ["myRatings", user?.email],
-    queryFn: () => base44.entities.Rating.filter({ user_email: user.email }),
+    queryKey: ["myRatings", user?.id],
+    queryFn: () => base44.entities.Rating.filter({ user_email: user.id }),
     enabled: !!user,
   });
 
@@ -45,7 +46,7 @@ export default function Rate() {
       const brand = brands.find(b => b.id === brandId);
       toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
       await base44.entities.Rating.create({
-        user_email: user.email,
+        user_email: user.id,
         brand_id: brandId,
         brand_name: brand?.brand_name || "",
         stars,

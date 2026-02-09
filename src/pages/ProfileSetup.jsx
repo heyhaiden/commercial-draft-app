@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getUserIdentity, setGuestName } from "@/utils/guestAuth";
 import { motion } from "framer-motion";
 import { ArrowLeft, Edit, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,9 +27,9 @@ export default function ProfileSetup() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    base44.auth.me().then(user => {
-      setDisplayName(user.full_name || "");
-    }).catch(() => {});
+    getUserIdentity(base44).then(identity => {
+      setDisplayName(identity.name || "");
+    });
   }, []);
 
   const handleSave = async () => {
@@ -39,12 +40,17 @@ export default function ProfileSetup() {
 
     setSaving(true);
     try {
-      const user = await base44.auth.me();
+      const userIdentity = await getUserIdentity(base44);
+      
+      // Save guest name if guest
+      if (userIdentity.isGuest) {
+        setGuestName(displayName);
+      }
       
       // Check if player already exists
       const existing = await base44.entities.Player.filter({
         room_code: roomCode,
-        user_email: user.email
+        user_email: userIdentity.id
       });
 
       if (existing.length > 0) {
@@ -55,7 +61,7 @@ export default function ProfileSetup() {
       } else {
         await base44.entities.Player.create({
           room_code: roomCode,
-          user_email: user.email,
+          user_email: userIdentity.id,
           display_name: displayName,
           icon: selectedIcon,
           ready: false

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getUserIdentity } from "@/utils/guestAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Settings } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
@@ -14,7 +15,7 @@ export default function MyDraft() {
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    getUserIdentity(base44).then(setUser);
     const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
     if (!hasSeenOnboarding) {
       setShowOnboarding(true);
@@ -27,8 +28,8 @@ export default function MyDraft() {
   });
 
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
-    queryKey: ["myPicks", user?.email],
-    queryFn: () => base44.entities.DraftPick.filter({ user_email: user.email, locked: true }),
+    queryKey: ["myPicks", user?.id],
+    queryFn: () => base44.entities.DraftPick.filter({ user_email: user.id, locked: true }),
     enabled: !!user,
   });
 
@@ -45,7 +46,7 @@ export default function MyDraft() {
     if (brand?.aired) userScores[pick.user_email] += brand.points || 0;
   });
   const sortedUsers = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
-  const myRank = sortedUsers.findIndex(([email]) => email === user?.email) + 1;
+  const myRank = sortedUsers.findIndex(([email]) => email === user?.id) + 1;
 
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
 
@@ -62,7 +63,7 @@ export default function MyDraft() {
 
   const playerIcon = "🏈"; // Get from player data
   const playerData = user ? {
-    displayName: user.full_name?.replace(" ", "") || "Player",
+    displayName: user.name?.replace(" ", "") || "Player",
     icon: playerIcon,
     rank: myRank,
     picks: myPicks,

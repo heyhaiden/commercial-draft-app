@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getUserIdentity } from "@/utils/guestAuth";
 import { motion } from "framer-motion";
 import { ArrowLeft, Bookmark, Delete } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -39,12 +40,12 @@ export default function JoinGame() {
       }
 
       const room = rooms[0];
-      const user = await base44.auth.me();
+      const userIdentity = await getUserIdentity(base44);
       
       // Check if already in room
       const existingPlayer = await base44.entities.Player.filter({
         room_code: code,
-        user_email: user.email
+        user_email: userIdentity.id
       });
 
       if (existingPlayer.length > 0) {

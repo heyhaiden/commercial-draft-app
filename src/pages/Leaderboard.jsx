@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
+import { getUserIdentity } from "@/utils/guestAuth";
 import { useQuery } from "@tanstack/react-query";
 import { Search, TrendingUp, TrendingDown, Crown } from "lucide-react";
 
@@ -7,7 +8,7 @@ export default function Leaderboard() {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    getUserIdentity(base44).then(setUser);
   }, []);
 
   const { data: brands = [] } = useQuery({
@@ -36,7 +37,7 @@ export default function Leaderboard() {
     .map(([email, data]) => ({ email, ...data }))
     .sort((a, b) => b.score - a.score);
 
-  const myRank = leaderboard.findIndex(e => e.email === user?.email) + 1;
+  const myRank = leaderboard.findIndex(e => e.email === user?.id) + 1;
 
   return (
     <div className="min-h-screen bg-[#1d1d0e] text-white pb-24">
@@ -115,12 +116,12 @@ export default function Leaderboard() {
           </div>
           {leaderboard.slice(3).map((entry, idx) => {
             const rank = idx + 4;
-            const isMe = entry.email === user?.email;
+            const isMe = entry.email === user?.id;
             return (
               <div
                 key={entry.email}
                 className={`rounded-2xl p-4 flex items-center gap-3 ${
-                  isMe
+                  entry.email === user?.id
                     ? "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20 border-2 border-[#f4c542]"
                     : "bg-[#2d2d1e] border border-[#5a5a4a]/30"
                 }`}

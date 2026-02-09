@@ -9,11 +9,10 @@ import HowToPlayModal from "@/components/common/HowToPlayModal";
 
 export default function Home() {
   const [user, setUser] = useState(null);
-  const [authChecked, setAuthChecked] = useState(false);
   const [showHowToPlay, setShowHowToPlay] = useState(false);
 
   useEffect(() => {
-    base44.auth.me().then(u => { setUser(u); setAuthChecked(true); }).catch(() => setAuthChecked(true));
+    base44.auth.me().then(setUser).catch(() => {});
   }, []);
 
   return (
@@ -66,50 +65,39 @@ export default function Home() {
         </motion.p>
 
         {/* Join Button */}
-        {authChecked && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.6 }}
-            className="w-full"
-          >
-            {user ? (
-              <Link to={createPageUrl("JoinGame")} className="block">
-                <Button className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg shadow-xl border-2 border-[#2d2d1e]/20 flex items-center justify-center gap-3">
-                  <Trophy className="w-6 h-6" />
-                  JOIN THE GAME
-                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                  </svg>
-                </Button>
-              </Link>
-            ) : (
-              <Button
-                onClick={() => base44.auth.redirectToLogin()}
-                className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg shadow-xl border-2 border-[#2d2d1e]/20"
-              >
-                SIGN IN TO PLAY
-              </Button>
-            )}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="w-full"
+        >
+          <Link to={createPageUrl("JoinGame")} className="block">
+            <Button className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg shadow-xl border-2 border-[#2d2d1e]/20 flex items-center justify-center gap-3">
+              <Trophy className="w-6 h-6" />
+              JOIN THE GAME
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Button>
+          </Link>
 
-            {/* How to Play Button */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.7 }}
-              className="mt-3"
+          {/* How to Play Button */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.7 }}
+            className="mt-3"
+          >
+            <Button
+              onClick={() => setShowHowToPlay(true)}
+              variant="outline"
+              className="w-10/12 mx-auto h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542] hover:bg-[#f4c542]/10 text-[#d4d4c8] hover:text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all"
             >
-              <Button
-                onClick={() => setShowHowToPlay(true)}
-                variant="outline"
-                className="w-10/12 mx-auto h-12 rounded-[20px] bg-transparent border-2 border-[#5a5a4a]/40 hover:border-[#f4c542] hover:bg-[#f4c542]/10 text-[#d4d4c8] hover:text-white font-semibold text-sm flex items-center justify-center gap-2 transition-all"
-              >
-                <BookOpen className="w-4 h-4" />
-                How to Play
-              </Button>
-            </motion.div>
+              <BookOpen className="w-4 h-4" />
+              How to Play
+            </Button>
           </motion.div>
-        )}
+        </motion.div>
 
         {/* Admin Link */}
         {user?.role === "admin" && (

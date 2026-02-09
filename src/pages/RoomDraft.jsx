@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { getUserIdentity } from "@/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Search, Clock, CheckCircle, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,7 +20,7 @@ export default function RoomDraft() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    getUserIdentity(base44).then(setUser);
   }, []);
 
   const { data: rooms = [] } = useQuery({
@@ -78,7 +79,7 @@ export default function RoomDraft() {
   };
 
   const currentTurnPlayer = getCurrentTurnPlayer();
-  const isMyTurn = currentTurnPlayer?.user_email === user?.email;
+  const isMyTurn = currentTurnPlayer?.user_email === user?.id;
   const isDraftComplete = roomPicks.length >= sortedPlayers.length * 5;
 
   useEffect(() => {
@@ -129,7 +130,7 @@ export default function RoomDraft() {
 
       await base44.entities.RoomDraftPick.create({
         room_code: roomCode,
-        user_email: user.email,
+        user_email: user.id,
         brand_id: brandToPick.id,
         brand_name: brandToPick.brand_name,
         pick_number: pickNumber,
@@ -137,8 +138,8 @@ export default function RoomDraft() {
       });
 
       await base44.entities.DraftPick.create({
-        user_email: user.email,
-        user_name: user.full_name,
+        user_email: user.id,
+        user_name: user.name,
         brand_id: brandToPick.id,
         brand_name: brandToPick.brand_name,
         category: brandToPick.category,

@@ -16,7 +16,9 @@ export default function Lobby() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
+    getUserIdentity(base44).then(identity => {
+      setUser(identity);
+    });
   }, []);
 
   const { data: rooms = [] } = useQuery({
