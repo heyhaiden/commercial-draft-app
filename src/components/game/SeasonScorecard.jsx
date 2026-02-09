@@ -3,8 +3,12 @@ import { motion, AnimatePresence } from "framer-motion";
 import { X, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function SeasonScorecard({ show, onClose, playerData, brands }) {
+  const navigate = useNavigate();
+  
   useEffect(() => {
     if (show) {
       // Football confetti
@@ -62,7 +66,7 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            className="w-full max-w-md rounded-3xl bg-gradient-to-b from-[#2d2d1e] to-[#1d1d0e] border-2 border-[#f4c542] overflow-hidden relative"
+            className="w-full max-w-md max-h-[90vh] rounded-3xl bg-gradient-to-b from-[#2d2d1e] to-[#1d1d0e] border-2 border-[#f4c542] overflow-y-auto relative"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-[#f4c542] to-[#d4a532] px-6 py-4 text-center relative">
@@ -89,7 +93,7 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               </div>
 
               <h2 className="text-2xl font-black text-center mb-1 mt-6">@{playerData.displayName}</h2>
-              <p className="text-[#a4a498] text-center text-sm mb-6">Pro Drafter • Season 2024</p>
+              <p className="text-[#a4a498] text-center text-sm mb-6">Pro Drafter • Season 2026</p>
 
               {/* Final Score */}
               <div className="rounded-2xl bg-[#3d3d2e] border border-[#5a5a4a]/30 p-6 mb-6 text-center">
@@ -140,7 +144,14 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
                   <Download className="w-4 h-4 mr-2" />
                   Save
                 </Button>
-                <Button variant="outline" className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white">
+                <Button 
+                  variant="outline" 
+                  className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white"
+                  onClick={() => {
+                    onClose();
+                    navigate(createPageUrl("Leaderboard"));
+                  }}
+                >
                   View Leaderboard
                 </Button>
               </div>

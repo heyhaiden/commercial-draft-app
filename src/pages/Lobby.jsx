@@ -43,13 +43,16 @@ export default function Lobby() {
       const dummyEmail = `dummy${Date.now()}@test.com`;
       const dummyIcon = `icon${Math.floor(Math.random() * 6) + 1}`;
 
+      // Get current non-host players for turn order
+      const nonHostPlayers = players.filter(p => p.user_email !== room.host_email);
+      
       await base44.entities.Player.create({
         room_code: roomCode,
         user_email: dummyEmail,
         display_name: dummyName,
         icon: dummyIcon,
         ready: true,
-        turn_order: players.length,
+        turn_order: nonHostPlayers.length,
       });
 
       toast.success("Dummy player added!");
@@ -86,8 +89,9 @@ export default function Lobby() {
 
   const startDraftMutation = useMutation({
     mutationFn: async () => {
-      // Assign turn orders
-      const shuffled = [...players].sort(() => Math.random() - 0.5);
+      // Assign turn orders only to non-host players
+      const nonHostPlayers = players.filter(p => p.user_email !== room.host_email);
+      const shuffled = [...nonHostPlayers].sort(() => Math.random() - 0.5);
       for (let i = 0; i < shuffled.length; i++) {
         await base44.entities.Player.update(shuffled[i].id, { turn_order: i });
       }
@@ -96,6 +100,7 @@ export default function Lobby() {
       await base44.entities.GameRoom.update(room.id, {
         status: "drafting",
         draft_starts_at: startTime,
+        turn_started_at: startTime,
       });
     },
     onSuccess: () => {
@@ -167,7 +172,7 @@ export default function Lobby() {
           </div>
 
           <div className="space-y-2">
-            {players.map((player, idx) => {
+            {players.filter(p => p.user_email !== room.host_email).map((player, idx) => {
               const icon = player.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
               const isMe = player.user_email === user?.email;
               return (
@@ -185,8 +190,6 @@ export default function Lobby() {
                   <div className="flex-1">
                     <p className="font-bold text-white">
                       {player.display_name}
-                      {idx === 0 && <span className="ml-2 text-[#f4c542] text-xs">LEAGUE COMMISH</span>}
-                    </p>
                     <p className={`text-xs ${player.ready ? "text-green-400" : "text-[#a4a498]"}`}>
                       {player.ready ? "Ready" : "Connecting..."}
                     </p>
@@ -210,7 +213,7 @@ export default function Lobby() {
             </Button>
             <Button
               onClick={() => startDraftMutation.mutate()}
-              disabled={players.length < 2 || startDraftMutation.isPending}
+              disabled={players.filter(p => p.user_email !== room.host_email).length < 2 || startDraftMutation.isPending}
               className="w-full h-16 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30 flex items-center justify-center gap-3"
             >
               <Rocket className="w-5 h-5" />

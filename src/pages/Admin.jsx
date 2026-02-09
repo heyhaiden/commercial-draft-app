@@ -106,6 +106,56 @@ export default function Admin() {
     },
   });
 
+  const clearRatingsMutation = useMutation({
+    mutationFn: async (brandId) => {
+      const ratings = await base44.entities.Rating.filter({ brand_id: brandId });
+      for (const rating of ratings) {
+        await base44.entities.Rating.delete(rating.id);
+      }
+      await base44.entities.Brand.update(brandId, {
+        average_rating: 0,
+        total_ratings: 0,
+        points: 0,
+        is_airing: false,
+        aired: false,
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["allRatings"] });
+      toast.success("Ratings cleared and ad reset");
+    },
+  });
+
+  const resetGameMutation = useMutation({
+    mutationFn: async () => {
+      const allRatings = await base44.entities.Rating.list("-created_date", 1000);
+      for (const rating of allRatings) {
+        await base44.entities.Rating.delete(rating.id);
+      }
+      const allDraftPicks = await base44.entities.DraftPick.list("-created_date", 1000);
+      for (const pick of allDraftPicks) {
+        await base44.entities.DraftPick.delete(pick.id);
+      }
+      for (const brand of brands) {
+        await base44.entities.Brand.update(brand.id, {
+          is_airing: false,
+          aired: false,
+          average_rating: 0,
+          total_ratings: 0,
+          points: 0,
+        });
+      }
+      if (gameState) {
+        await base44.entities.GameState.update(gameState.id, { phase: "pre_draft" });
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      toast.success("Game reset complete");
+    },
+  });
+
   const uniqueUsers = new Set(allPicks.map(p => p.user_email)).size;
 
   const { data: rooms = [] } = useQuery({
@@ -140,8 +190,7 @@ export default function Admin() {
             <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">
               <ArrowLeft className="w-5 h-5" />
             </button>
-            <Settings className="w-6 h-6 text-[#f4c542]" />
-            <h1 className="text-2xl font-black text-white">Admin Control Panel</h1>
+            <h1 className="text-2xl font-black text-white">Control Panel</h1>
           </div>
           {rooms[0] && (
             <button
@@ -154,6 +203,22 @@ export default function Admin() {
               </svg>
             </button>
           )}
+        </div>
+
+        {/* Reset Button */}
+        <div className="mb-6">
+          <Button
+            onClick={() => {
+              if (confirm("Are you sure you want to reset the entire game? This will delete all ratings, picks, and reset all brands.")) {
+                resetGameMutation.mutate();
+              }
+            }}
+            disabled={resetGameMutation.isPending}
+            variant="destructive"
+            className="w-full h-12 rounded-2xl"
+          >
+            {resetGameMutation.isPending ? "Resetting..." : "Reset Entire Game"}
+          </Button>
         </div>
 
         {/* Stats */}
@@ -230,7 +295,21 @@ export default function Admin() {
                       <Play className="w-3 h-3 mr-1" /> Air
                     </Button>
                   ) : (
-                    <CheckCircle className="w-5 h-5 text-green-400" />
+                    <>
+                      <CheckCircle className="w-5 h-5 text-green-400" />
+                      <Button 
+                        size="sm" 
+                        variant="outline" 
+                        onClick={() => {
+                          if (confirm("Clear all ratings and reset this ad?")) {
+                            clearRatingsMutation.mutate(brand.id);
+                          }
+                        }}
+                        className="rounded-lg text-xs"
+                      >
+                        Rescore
+                      </Button>
+                    </>
                   )}
                 </div>
               </div>

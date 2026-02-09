@@ -51,11 +51,11 @@ import Admin from './pages/Admin';
 import CreateRoom from './pages/CreateRoom';
 import Home from './pages/Home';
 import JoinGame from './pages/JoinGame';
-import ProfileSetup from './pages/ProfileSetup';
+import Leaderboard from './pages/Leaderboard';
 import Lobby from './pages/Lobby';
 import MyDraft from './pages/MyDraft';
+import ProfileSetup from './pages/ProfileSetup';
 import Rate from './pages/Rate';
-import Leaderboard from './pages/Leaderboard';
 import RoomDraft from './pages/RoomDraft';
 import __Layout from './Layout.jsx';
 
@@ -65,11 +65,11 @@ export const PAGES = {
     "CreateRoom": CreateRoom,
     "Home": Home,
     "JoinGame": JoinGame,
-    "ProfileSetup": ProfileSetup,
+    "Leaderboard": Leaderboard,
     "Lobby": Lobby,
     "MyDraft": MyDraft,
+    "ProfileSetup": ProfileSetup,
     "Rate": Rate,
-    "Leaderboard": Leaderboard,
     "RoomDraft": RoomDraft,
 }
 

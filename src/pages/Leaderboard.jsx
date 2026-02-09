@@ -61,16 +61,16 @@ export default function Leaderboard() {
               const topBrand = brands.filter(b => b.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0))[0];
               return (
                 <div className="rounded-3xl bg-gradient-to-r from-[#4a4a3a]/40 to-[#3a3a2a]/40 border border-[#5a5a4a]/30 p-4 relative overflow-hidden">
-                  <div className="absolute top-4 left-4 bg-[#f4c542] text-[#2d2d1e] text-xs font-bold px-3 py-1 rounded-full">#1 RATED</div>
-                  <div className="mt-8 flex items-center gap-4">
-                    <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 p-2">
+                  <div className="absolute top-3 left-3 bg-[#f4c542] text-[#2d2d1e] text-xs font-bold px-2 py-1 rounded-full">#1 RATED</div>
+                  <div className="mt-6 flex items-center gap-3">
+                    <div className="w-16 h-16 rounded-2xl bg-white flex items-center justify-center flex-shrink-0 p-2">
                       <img src={topBrand.logo_url} alt={topBrand.brand_name} className="w-full h-full object-contain" />
                     </div>
                     <div className="flex-1">
-                      <p className="font-black text-2xl text-white">{topBrand.brand_name} - {topBrand.title}</p>
+                      <p className="font-black text-lg text-white">{topBrand.brand_name} - {topBrand.title}</p>
                       <div className="flex items-center gap-1 mt-1">
-                        <span className="text-yellow-400 text-xl">⭐</span>
-                        <span className="font-bold text-lg">{(topBrand.average_rating || 0).toFixed(1)}/5</span>
+                        <span className="text-yellow-400 text-base">⭐</span>
+                        <span className="font-bold text-sm">{(topBrand.average_rating || 0).toFixed(1)}/5</span>
                       </div>
                     </div>
                   </div>

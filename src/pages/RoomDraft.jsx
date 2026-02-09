@@ -48,7 +48,9 @@ export default function RoomDraft() {
   });
 
   const room = rooms[0];
-  const sortedPlayers = [...players].sort((a, b) => a.turn_order - b.turn_order);
+  // Filter out the host from players
+  const gamePlayers = players.filter(p => room && p.user_email !== room.host_email);
+  const sortedPlayers = [...gamePlayers].sort((a, b) => a.turn_order - b.turn_order);
   
   const pickedBrandIds = new Set(roomPicks.map(p => p.brand_id));
   const availableBrands = brands.filter(b => !pickedBrandIds.has(b.id));
@@ -57,6 +59,8 @@ export default function RoomDraft() {
   );
 
   // Calculate current turn
+  const [timeRemaining, setTimeRemaining] = useState(null);
+
   const getCurrentTurnPlayer = () => {
     if (!room || !sortedPlayers.length) return null;
     
@@ -84,9 +88,37 @@ export default function RoomDraft() {
     }
   }, [isDraftComplete, room, navigate]);
 
+  // Timer countdown
+  useEffect(() => {
+    if (!room || !currentTurnPlayer || isDraftComplete) return;
+
+    const interval = setInterval(() => {
+      const turnStartTime = new Date(room.turn_started_at || room.draft_starts_at).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - turnStartTime) / 1000);
+      const remaining = Math.max(0, room.round_timer - elapsed);
+      
+      setTimeRemaining(remaining);
+
+      if (remaining === 0 && isMyTurn) {
+        // Auto-pick a random brand if time runs out
+        if (availableBrands.length > 0 && !lockPickMutation.isPending) {
+          const randomBrand = availableBrands[Math.floor(Math.random() * availableBrands.length)];
+          setSelectedBrand(randomBrand);
+          setTimeout(() => {
+            lockPickMutation.mutate(randomBrand);
+          }, 100);
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [room, currentTurnPlayer, isDraftComplete, isMyTurn, availableBrands]);
+
   const lockPickMutation = useMutation({
-    mutationFn: async () => {
-      if (!selectedBrand || !isMyTurn) return;
+    mutationFn: async (brand) => {
+      const brandToPick = brand || selectedBrand;
+      if (!brandToPick) return;
 
       const pickNumber = roomPicks.length + 1;
       const currentRound = Math.floor(pickNumber / sortedPlayers.length) + 1;
@@ -94,20 +126,24 @@ export default function RoomDraft() {
       await base44.entities.RoomDraftPick.create({
         room_code: roomCode,
         user_email: user.email,
-        brand_id: selectedBrand.id,
-        brand_name: selectedBrand.brand_name,
+        brand_id: brandToPick.id,
+        brand_name: brandToPick.brand_name,
         pick_number: pickNumber,
         round: currentRound,
       });
 
-      // Also create in global draft picks
       await base44.entities.DraftPick.create({
         user_email: user.email,
         user_name: user.full_name,
-        brand_id: selectedBrand.id,
-        brand_name: selectedBrand.brand_name,
-        category: selectedBrand.category,
+        brand_id: brandToPick.id,
+        brand_name: brandToPick.brand_name,
+        category: brandToPick.category,
         locked: true,
+      });
+
+      // Update turn timer
+      await base44.entities.GameRoom.update(room.id, {
+        turn_started_at: new Date().toISOString(),
       });
 
       setSelectedBrand(null);
@@ -115,6 +151,7 @@ export default function RoomDraft() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["roomPicks"] });
+      queryClient.invalidateQueries({ queryKey: ["room"] });
     },
   });
 
@@ -156,7 +193,9 @@ export default function RoomDraft() {
             {room.round_timer && (
               <div className="text-center">
                 <Clock className="w-5 h-5 text-[#f4c542] mx-auto mb-1" />
-                <p className="text-xs text-[#a4a498]">0:{room.round_timer}</p>
+                <p className={`text-xs font-bold ${timeRemaining <= 10 ? 'text-red-400' : 'text-[#a4a498]'}`}>
+                  {timeRemaining !== null ? `0:${String(timeRemaining).padStart(2, '0')}` : `0:${room.round_timer}`}
+                </p>
               </div>
             )}
           </div>

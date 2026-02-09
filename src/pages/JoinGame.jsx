@@ -112,7 +112,7 @@ export default function JoinGame() {
               onClick={() => handleKeyPress(num)}
               className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex flex-col items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
             >
-              <span className="text-2xl font-bold">{num}</span>
+              <span className="text-xl font-bold">{num}</span>
               {letters && <span className="text-[10px] text-[#a4a498] mt-0.5">{letters}</span>}
             </button>
           ))}
@@ -130,7 +130,7 @@ export default function JoinGame() {
             onClick={() => handleKeyPress("0")}
             className="aspect-square rounded-2xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 flex items-center justify-center hover:bg-[#5a5a4a]/40 transition-colors"
           >
-            <span className="text-2xl font-bold">0</span>
+            <span className="text-xl font-bold">0</span>
           </button>
           <button
             onClick={handleBackspace}
