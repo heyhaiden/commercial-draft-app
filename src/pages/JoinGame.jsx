@@ -42,6 +42,12 @@ export default function JoinGame() {
       const room = rooms[0];
       const userIdentity = await getUserIdentity(base44);
       
+      // Check if user is the host - skip profile setup
+      if (userIdentity.id === room.host_email) {
+        navigate(createPageUrl("Lobby") + `?code=${code}`);
+        return;
+      }
+      
       // Check if already in room
       const existingPlayer = await base44.entities.Player.filter({
         room_code: code,
