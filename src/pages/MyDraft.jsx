@@ -8,6 +8,7 @@ import { motion } from "framer-motion";
 import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function MyDraft() {
+  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [failedImages, setFailedImages] = useState(new Set());
@@ -78,8 +79,6 @@ export default function MyDraft() {
     queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: roomCode }),
     enabled: !!roomCode,
   });
-
-  const queryClient = useQueryClient();
 
   // Calculate room-scoped brand states
   const roomBrandStates = useMemo(() => {
