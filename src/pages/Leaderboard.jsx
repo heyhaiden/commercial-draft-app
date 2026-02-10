@@ -52,7 +52,8 @@ export default function Leaderboard() {
 
   // Memoize leaderboard calculation for performance
   const { leaderboard, myRank, hasAnyRatings } = useMemo(() => {
-    if (!currentRoomCode || allRoomPicks.length === 0) {
+    // Show leaderboard even without picks if there are players
+    if (!currentRoomCode) {
       return { leaderboard: [], myRank: 0, hasAnyRatings: false };
     }
 
@@ -60,6 +61,17 @@ export default function Leaderboard() {
     const brandMap = new Map(brands.map(b => [b.id, b]));
 
     const userScores = {};
+    
+    // Initialize all players with 0 score, even if they haven't picked yet
+    allPlayers.forEach(player => {
+      userScores[player.user_email] = {
+        name: player.display_name || player.user_email,
+        score: 0,
+        picks: []
+      };
+    });
+
+    // Add scores from picks
     allRoomPicks.forEach(pick => {
       if (!userScores[pick.user_email]) {
         const player = allPlayers.find(p => p.user_email === pick.user_email);
@@ -177,23 +189,24 @@ export default function Leaderboard() {
 
         {/* Leaderboard List */}
         <div className="space-y-2">
-          {!hasAnyRatings && (
+          {leaderboard.length === 0 && (
             <div className="text-center py-12">
               <div className="w-20 h-20 rounded-full bg-[#4a4a3a]/20 flex items-center justify-center mx-auto mb-4">
                 <span className="text-4xl">📊</span>
               </div>
-              <h3 className="text-xl font-bold mb-2">Waiting for Game to Start</h3>
-              <p className="text-[#a4a498] text-sm">Rankings will appear once commercials start airing and players rate them!</p>
+              <h3 className="text-xl font-bold mb-2">No Players Yet</h3>
+              <p className="text-[#a4a498] text-sm">Players will appear here once they join the game room!</p>
             </div>
           )}
-          {hasAnyRatings && (
+          {leaderboard.length > 0 && (
             <>
               <div className="flex items-center justify-between text-[#a4a498] text-xs font-bold mb-2 px-4">
                 <span>RANK</span>
                 <span>USER</span>
                 <span>POINTS</span>
               </div>
-              {leaderboard.slice(3).map((entry, idx) => {
+              {(hasAnyRatings && leaderboard.length >= 3 ? leaderboard.slice(3) : leaderboard).map((entry, idx) => {
+            const rank = hasAnyRatings && leaderboard.length >= 3 ? idx + 4 : idx + 1;
             const rank = idx + 4;
             const isMe = entry.email === user?.id;
             const player = playerMap.get(entry.email);
