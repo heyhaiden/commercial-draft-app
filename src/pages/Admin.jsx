@@ -34,10 +34,16 @@ export default function Admin() {
     queryFn: () => base44.entities.Brand.list("brand_name", 100),
   });
 
-  // Real-time sync for brand updates
+  const { data: roomBrandStates = [] } = useQuery({
+    queryKey: ["roomBrandStates", currentRoomCode],
+    queryFn: () => base44.entities.RoomBrandState.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
+  });
+
+  // Real-time sync for room brand state
   useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    const unsubscribe = base44.entities.RoomBrandState.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
     });
     return unsubscribe;
   }, [queryClient]);
@@ -107,18 +113,18 @@ export default function Admin() {
   const airCommercialMutation = useMutation({
     mutationFn: async (brandId) => {
       // Stop any currently airing
-      const currentlyAiring = brands.filter(b => b.is_airing);
-      for (const b of currentlyAiring) {
+      const currentlyAiring = roomBrandStates.filter(s => s.is_airing);
+      for (const state of currentlyAiring) {
         // Calculate final average from ratings in current room only
         const brandRatings = await base44.entities.Rating.filter({ 
-          brand_id: b.id,
+          brand_id: state.brand_id,
           room_code: currentRoomCode 
         });
         if (brandRatings.length > 0) {
           const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
           const finalAvg = totalStars / brandRatings.length;
           const finalPoints = Math.round(finalAvg * 20) - 10;
-          await base44.entities.Brand.update(b.id, {
+          await base44.entities.RoomBrandState.update(state.id, {
             is_airing: false,
             aired: true,
             average_rating: Math.round(finalAvg * 100) / 100,
@@ -126,18 +132,34 @@ export default function Admin() {
             points: finalPoints,
           });
         } else {
-          await base44.entities.Brand.update(b.id, { is_airing: false, aired: true });
+          await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
         }
       }
-      // Start new one
-      await base44.entities.Brand.update(brandId, {
-        is_airing: true,
-        aired: false,
-        air_started_at: new Date().toISOString(),
+      // Start new one - create or update
+      const existing = await base44.entities.RoomBrandState.filter({ 
+        room_code: currentRoomCode, 
+        brand_id: brandId 
       });
+      const brand = brands.find(b => b.id === brandId);
+      if (existing.length > 0) {
+        await base44.entities.RoomBrandState.update(existing[0].id, {
+          is_airing: true,
+          aired: false,
+          air_started_at: new Date().toISOString(),
+        });
+      } else {
+        await base44.entities.RoomBrandState.create({
+          room_code: currentRoomCode,
+          brand_id: brandId,
+          brand_name: brand?.brand_name,
+          is_airing: true,
+          aired: false,
+          air_started_at: new Date().toISOString(),
+        });
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
       toast.success("Commercial is now airing!");
     },
   });
@@ -149,23 +171,31 @@ export default function Admin() {
         brand_id: brandId,
         room_code: currentRoomCode 
       });
+      const existing = await base44.entities.RoomBrandState.filter({ 
+        room_code: currentRoomCode, 
+        brand_id: brandId 
+      });
       if (brandRatings.length > 0) {
         const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
         const finalAvg = totalStars / brandRatings.length;
         const finalPoints = Math.round(finalAvg * 20) - 10;
-        await base44.entities.Brand.update(brandId, {
-          is_airing: false,
-          aired: true,
-          average_rating: Math.round(finalAvg * 100) / 100,
-          total_ratings: brandRatings.length,
-          points: finalPoints,
-        });
+        if (existing.length > 0) {
+          await base44.entities.RoomBrandState.update(existing[0].id, {
+            is_airing: false,
+            aired: true,
+            average_rating: Math.round(finalAvg * 100) / 100,
+            total_ratings: brandRatings.length,
+            points: finalPoints,
+          });
+        }
       } else {
-        await base44.entities.Brand.update(brandId, { is_airing: false, aired: true });
+        if (existing.length > 0) {
+          await base44.entities.RoomBrandState.update(existing[0].id, { is_airing: false, aired: true });
+        }
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
       toast.success("Commercial stopped");
     },
   });
@@ -179,16 +209,22 @@ export default function Admin() {
       for (const rating of ratings) {
         await base44.entities.Rating.delete(rating.id);
       }
-      await base44.entities.Brand.update(brandId, {
-        average_rating: 0,
-        total_ratings: 0,
-        points: 0,
-        is_airing: false,
-        aired: false,
+      const existing = await base44.entities.RoomBrandState.filter({ 
+        room_code: currentRoomCode, 
+        brand_id: brandId 
       });
+      if (existing.length > 0) {
+        await base44.entities.RoomBrandState.update(existing[0].id, {
+          average_rating: 0,
+          total_ratings: 0,
+          points: 0,
+          is_airing: false,
+          aired: false,
+        });
+      }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
       queryClient.invalidateQueries({ queryKey: ["allRatings"] });
       toast.success("Ratings cleared and ad reset");
     },
@@ -227,12 +263,13 @@ export default function Admin() {
   const uniqueUsers = currentRoomPlayers.length;
 
   const filteredBrands = brands.filter(b => {
+    const state = roomBrandStates.find(s => s.brand_id === b.id);
     const matchesSearch = b.brand_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          b.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filter === "all" || 
-                         (filter === "aired" && b.aired) ||
-                         (filter === "pending" && !b.aired && !b.is_airing) ||
-                         (filter === "airing" && b.is_airing);
+                         (filter === "aired" && state?.aired) ||
+                         (filter === "pending" && !state?.aired && !state?.is_airing) ||
+                         (filter === "airing" && state?.is_airing);
     return matchesSearch && matchesFilter;
   });
 
@@ -276,8 +313,8 @@ export default function Admin() {
           ) : (
             [
               { label: "Players", value: uniqueUsers },
-              { label: "Aired", value: brands.filter(b => b.aired).length },
-              { label: "Left", value: brands.filter(b => !b.aired && !b.is_airing).length },
+              { label: "Aired", value: roomBrandStates.filter(s => s.aired).length },
+              { label: "Left", value: brands.length - roomBrandStates.filter(s => s.aired || s.is_airing).length },
             ].map(({ label, value }) => (
               <div key={label} className="p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
                 <p className="text-3xl font-black text-[#f4c542]">{value}</p>
@@ -293,22 +330,18 @@ export default function Admin() {
           <Button
             onClick={async () => {
               // 1. Stop any airing brands
-              const airing = brands.filter(b => b.is_airing);
-              for (const b of airing) {
-                await base44.entities.Brand.update(b.id, { is_airing: false, aired: true });
+              const airing = roomBrandStates.filter(s => s.is_airing);
+              for (const state of airing) {
+                await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
               }
 
-              // 2. Mark all pending brands as aired
-              const pending = brands.filter(b => !b.aired && !b.is_airing);
-              for (const b of pending) {
-                await base44.entities.Brand.update(b.id, { aired: true });
-              }
-
-              // 3. Generate random scores for all brands
-              const allBrands = [...brands];
-              for (const brand of allBrands) {
-                // Clear existing ratings
-                const existingRatings = await base44.entities.Rating.filter({ brand_id: brand.id });
+              // 2. Mark all brands as aired and generate scores
+              for (const brand of brands) {
+                // Clear existing ratings for this brand in this room
+                const existingRatings = await base44.entities.Rating.filter({ 
+                  brand_id: brand.id,
+                  room_code: currentRoomCode 
+                });
                 for (const r of existingRatings) {
                   await base44.entities.Rating.delete(r.id);
                 }
@@ -331,13 +364,31 @@ export default function Admin() {
                 const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
                 const points = Math.round(avgRating * 20) - 10;
 
-                await base44.entities.Brand.update(brand.id, {
-                  average_rating: Math.round(avgRating * 100) / 100,
-                  total_ratings: numRatings,
-                  points,
-                  aired: true,
-                  is_airing: false,
+                // Update or create room brand state
+                const existing = await base44.entities.RoomBrandState.filter({ 
+                  room_code: currentRoomCode, 
+                  brand_id: brand.id 
                 });
+                if (existing.length > 0) {
+                  await base44.entities.RoomBrandState.update(existing[0].id, {
+                    average_rating: Math.round(avgRating * 100) / 100,
+                    total_ratings: numRatings,
+                    points,
+                    aired: true,
+                    is_airing: false,
+                  });
+                } else {
+                  await base44.entities.RoomBrandState.create({
+                    room_code: currentRoomCode,
+                    brand_id: brand.id,
+                    brand_name: brand.brand_name,
+                    average_rating: Math.round(avgRating * 100) / 100,
+                    total_ratings: numRatings,
+                    points,
+                    aired: true,
+                    is_airing: false,
+                  });
+                }
               }
 
               queryClient.invalidateQueries();
@@ -388,11 +439,13 @@ export default function Admin() {
             {brandsLoading ? (
               Array.from({ length: 5 }).map((_, idx) => <BrandCardSkeleton key={idx} />)
             ) : (
-              filteredBrands.map(brand => (
+              filteredBrands.map(brand => {
+                const state = roomBrandStates.find(s => s.brand_id === brand.id);
+                return (
               <div key={brand.id} className={cn(
                 "flex items-center gap-3 p-3 rounded-xl border transition-all",
-                brand.is_airing ? "bg-red-500/20 border-red-400/50" :
-                brand.aired ? "bg-green-500/10 border-green-400/30 opacity-60" :
+                state?.is_airing ? "bg-red-500/20 border-red-400/50" :
+                state?.aired ? "bg-green-500/10 border-green-400/30 opacity-60" :
                 "bg-[#2d2d1e] border-[#5a5a4a]/30"
               )}>
                 <div className="w-10 h-10 rounded-xl bg-white/90 flex items-center justify-center overflow-hidden flex-shrink-0 p-2">
@@ -412,17 +465,17 @@ export default function Admin() {
                   <p className="text-white/40 text-xs truncate">{brand.title}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                {brand.aired && (
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs text-white/40">⭐ {(brand.average_rating || 0).toFixed(1)}</span>
-                    <span className="text-xs text-[#f4c542]">({allRatings?.filter(r => r.brand_id === brand.id).length || 0}/{uniqueUsers})</span>
-                  </div>
-                )}
-                  {brand.is_airing ? (
+                 {state?.aired && (
+                   <div className="flex items-center gap-2">
+                     <span className="text-xs text-white/40">⭐ {(state.average_rating || 0).toFixed(1)}</span>
+                     <span className="text-xs text-[#f4c542]">({allRatings?.filter(r => r.brand_id === brand.id).length || 0}/{uniqueUsers})</span>
+                   </div>
+                 )}
+                  {state?.is_airing ? (
                     <Button size="sm" variant="destructive" onClick={() => stopAiringMutation.mutate(brand.id)} className="rounded-lg">
                       <Square className="w-3 h-3 mr-1" /> Stop
                     </Button>
-                  ) : !brand.aired ? (
+                  ) : !state?.aired ? (
                     <Button size="sm" onClick={() => airCommercialMutation.mutate(brand.id)} className="rounded-lg bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e]">
                       <Play className="w-3 h-3 mr-1" /> Air
                     </Button>
@@ -444,8 +497,9 @@ export default function Admin() {
                     </>
                   )}
                 </div>
-              </div>
-              ))
+                </div>
+                );
+                })
             )}
           </div>
         </div>
