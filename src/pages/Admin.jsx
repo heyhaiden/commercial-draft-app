@@ -34,20 +34,6 @@ export default function Admin() {
     queryFn: () => base44.entities.Brand.list("brand_name", 100),
   });
 
-  const { data: roomBrandStates = [] } = useQuery({
-    queryKey: ["roomBrandStates", currentRoomCode],
-    queryFn: () => base44.entities.RoomBrandState.filter({ room_code: currentRoomCode }),
-    enabled: !!currentRoomCode,
-  });
-
-  // Real-time sync for room brand state
-  useEffect(() => {
-    const unsubscribe = base44.entities.RoomBrandState.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
-    });
-    return unsubscribe;
-  }, [queryClient]);
-
   // Real-time sync for ratings
   useEffect(() => {
     const unsubscribe = base44.entities.Rating.subscribe((event) => {
@@ -67,6 +53,20 @@ export default function Admin() {
   });
 
   const currentRoomCode = rooms[0]?.room_code;
+
+  const { data: roomBrandStates = [] } = useQuery({
+    queryKey: ["roomBrandStates", currentRoomCode],
+    queryFn: () => base44.entities.RoomBrandState.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
+  });
+
+  // Real-time sync for room brand state
+  useEffect(() => {
+    const unsubscribe = base44.entities.RoomBrandState.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
+    });
+    return unsubscribe;
+  }, [queryClient]);
 
   const { data: allPicks = [] } = useQuery({
     queryKey: ["allPicks"],
