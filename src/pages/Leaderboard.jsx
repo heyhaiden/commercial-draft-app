@@ -153,10 +153,32 @@ export default function Leaderboard() {
           <h1 className="text-2xl font-black">LIVE SCORING</h1>
         </div>
 
-
+        {/* Top Rated Ad */}
+        {hasAnyRatings && (() => {
+          const topAd = brands.filter(b => b.aired).sort((a, b) => b.average_rating - a.average_rating)[0];
+          if (!topAd) return null;
+          return (
+            <div className="mb-6 rounded-2xl bg-gradient-to-r from-[#f4c542]/10 to-[#d4a532]/10 border border-[#f4c542]/30 p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-xl bg-[#3d3d2e] flex items-center justify-center">
+                  <span className="text-2xl">🏆</span>
+                </div>
+                <div className="flex-1">
+                  <p className="text-xs text-[#a4a498] font-bold">TOP RATED AD</p>
+                  <p className="font-black text-lg">{topAd.brand_name}</p>
+                  <p className="text-sm text-[#a4a498]">{topAd.title}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-black text-[#f4c542]">{topAd.average_rating.toFixed(1)}</p>
+                  <p className="text-[10px] text-[#a4a498]">⭐ STARS</p>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Top 3 Podium */}
-        {hasAnyRatings && leaderboard.length >= 3 && (
+        {leaderboard.length >= 3 && (
         <div className="mb-8">
           <div className="flex items-center justify-center gap-2 mb-6">
             {[leaderboard[1], leaderboard[0], leaderboard[2]].map((entry, idx) => {
