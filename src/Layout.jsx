@@ -1,5 +1,6 @@
 import React from "react";
 import MobileNav from "@/components/common/MobileNav";
+import GlobalRatingModal from "@/components/game/GlobalRatingModal";
 
 export default function Layout({ children, currentPageName }) {
   // No nav on these pages
