@@ -131,8 +131,7 @@ export default function Admin() {
   const airCommercialMutation = useMutation({
     mutationFn: async (brandId) => {
       if (!currentRoom || !roomCode) {
-        toast.error("No room found");
-        return;
+        throw new Error("No room found");
       }
       
       // Start new one - store in GameRoom (room-scoped)
@@ -143,6 +142,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
       toast.success("Commercial is now airing!");
     },
     onError: (error) => {
