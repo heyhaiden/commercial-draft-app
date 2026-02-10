@@ -76,7 +76,7 @@ export default function Home() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#4a4a3a]/40 border border-[#5a5a4a]/50 backdrop-blur-sm mb-6"
         >
           <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
-          <span className="text-sm text-[#d4d4c8] font-medium tracking-wide">SUPER BOWL LVIII</span>
+          <span className="text-sm text-[#d4d4c8] font-medium tracking-wide">The Big Game 2026</span>
         </motion.div>
 
         {/* App Icon with glow effect */}
