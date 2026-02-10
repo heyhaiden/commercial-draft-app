@@ -87,7 +87,7 @@ export default function CreateRoom() {
   const shareCode = () => {
     if (roomCode) {
       navigator.clipboard.writeText(roomCode);
-      toast.success("Code copied!");
+      toast.success("Copied to clipboard!");
     }
   };
 

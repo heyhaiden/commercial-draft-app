@@ -49,7 +49,6 @@
  */
 import JoinGame from './pages/JoinGame';
 import ProfileSetup from './pages/ProfileSetup';
-import Leaderboard from './pages/Leaderboard';
 import MyDraft from './pages/MyDraft';
 import CreateRoom from './pages/CreateRoom';
 import Lobby from './pages/Lobby';
@@ -57,13 +56,13 @@ import Admin from './pages/Admin';
 import Rate from './pages/Rate';
 import RoomDraft from './pages/RoomDraft';
 import Home from './pages/Home';
+import Leaderboard from './pages/Leaderboard';
 import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
     "JoinGame": JoinGame,
     "ProfileSetup": ProfileSetup,
-    "Leaderboard": Leaderboard,
     "MyDraft": MyDraft,
     "CreateRoom": CreateRoom,
     "Lobby": Lobby,
@@ -71,6 +70,7 @@ export const PAGES = {
     "Rate": Rate,
     "RoomDraft": RoomDraft,
     "Home": Home,
+    "Leaderboard": Leaderboard,
 }
 
 export const pagesConfig = {
