@@ -9,12 +9,33 @@ export default function Leaderboard() {
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
-  const currentRoomCode = getCurrentRoomCode();
+  const [currentRoomCode, setCurrentRoomCode] = useState(null);
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
+  }, []);
+
+  // Get room code from session or find the user's active room
+  useEffect(() => {
+    async function loadRoomCode() {
+      const sessionCode = getCurrentRoomCode();
+      if (sessionCode) {
+        setCurrentRoomCode(sessionCode);
+        return;
+      }
+
+      // Fallback: find any active room the user is in
+      const userIdentity = await getUserIdentity(base44);
+      const playerRecords = await base44.entities.Player.filter({ user_email: userIdentity.id });
+      if (playerRecords.length > 0) {
+        const activeRoom = playerRecords[0].room_code;
+        setCurrentRoomCode(activeRoom);
+        setCurrentRoomCode(activeRoom);
+      }
+    }
+    loadRoomCode();
   }, []);
 
   const { data: brands = [] } = useQuery({
