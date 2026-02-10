@@ -24,16 +24,30 @@ export function setGuestName(name) {
 export async function getUserIdentity(base44) {
   try {
     const user = await base44.auth.me();
+    // Store user info in session storage for persistence within the session
+    sessionStorage.setItem('currentUser', JSON.stringify({
+      id: user.email,
+      name: user.full_name,
+      isGuest: false
+    }));
     return {
       id: user.email,
       name: user.full_name,
       isGuest: false
     };
   } catch {
-    return {
+    // Try to restore from session storage first
+    const cached = sessionStorage.getItem('currentUser');
+    if (cached) {
+      return JSON.parse(cached);
+    }
+    // Fallback to guest
+    const guestUser = {
       id: getGuestId(),
       name: getGuestName(),
       isGuest: true
     };
+    sessionStorage.setItem('currentUser', JSON.stringify(guestUser));
+    return guestUser;
   }
 }
