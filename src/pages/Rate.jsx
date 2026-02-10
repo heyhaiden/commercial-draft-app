@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -14,6 +14,7 @@ export default function Rate() {
   const [selectedStars, setSelectedStars] = useState(0);
   const queryClient = useQueryClient();
   const roomCode = getCurrentRoomCode();
+  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
@@ -37,7 +38,7 @@ export default function Rate() {
   const airingBrand = brands.find(b => b.is_airing);
   const ratedIds = new Set(myRatings.map(r => r.brand_id));
 
-  const [ratingTimer, setRatingTimer] = useState(null);
+  const [remainingSeconds, setRemainingSeconds] = useState(null);
 
   // Real-time sync for brand updates (airing status, ratings)
   useEffect(() => {
@@ -47,28 +48,55 @@ export default function Rate() {
     return unsubscribe;
   }, [queryClient]);
 
-  // Auto-show popup when brand starts airing and navigate to Rate tab
+  // Auto-show popup when brand starts airing
   useEffect(() => {
     if (airingBrand && !ratedIds.has(airingBrand.id) && !showRating) {
       setShowRating(airingBrand);
       setSelectedStars(0);
-      setRatingTimer(120); // 2 minutes
-      // Navigate to Rate tab
-      window.location.hash = '#/Rate';
+      autoSubmittedRef.current = false; // Reset auto-submit flag for new brand
     }
-  }, [airingBrand?.id]);
+    // Close popup if user has rated or brand stopped airing
+    if (showRating && (ratedIds.has(showRating.id) || !airingBrand || airingBrand.id !== showRating.id)) {
+      setShowRating(null);
+      setSelectedStars(0);
+      setRemainingSeconds(null);
+      autoSubmittedRef.current = false;
+    }
+  }, [airingBrand?.id, ratedIds, showRating]);
 
-
-
-  // Rating countdown timer
+  // Calculate synced timer based on air_started_at (2 minutes = 120 seconds)
   useEffect(() => {
-    if (ratingTimer !== null && ratingTimer > 0 && showRating) {
-      const interval = setInterval(() => {
-        setRatingTimer(prev => Math.max(0, prev - 1));
-      }, 1000);
-      return () => clearInterval(interval);
+    if (!showRating || !showRating.air_started_at || ratedIds.has(showRating.id)) {
+      setRemainingSeconds(null);
+      return;
     }
-  }, [ratingTimer, showRating]);
+
+    const calculateRemaining = () => {
+      const startTime = new Date(showRating.air_started_at).getTime();
+      const now = Date.now();
+      const elapsed = Math.floor((now - startTime) / 1000);
+      const remaining = Math.max(0, 120 - elapsed); // 2 minutes = 120 seconds
+      return remaining;
+    };
+
+    // Calculate immediately
+    setRemainingSeconds(calculateRemaining());
+
+    // Update every second
+    const interval = setInterval(() => {
+      const remaining = calculateRemaining();
+      setRemainingSeconds(remaining);
+      
+      // Auto-submit 0 rating when timer expires (only once)
+      if (remaining === 0 && !ratedIds.has(showRating.id) && !autoSubmittedRef.current && user) {
+        autoSubmittedRef.current = true;
+        rateMutation.mutate({ brandId: showRating.id, stars: 0 });
+        toast.info("⏱️ Time expired - submitted 0 stars");
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [showRating?.air_started_at, showRating?.id, ratedIds, user]);
 
   // Get players for current room only
   const { data: allPlayers = [] } = useQuery({
@@ -132,7 +160,8 @@ export default function Rate() {
       queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand"] });
       setShowRating(null);
       setSelectedStars(0);
-      setRatingTimer(null);
+      setRemainingSeconds(null);
+      autoSubmittedRef.current = false;
     },
   });
 
@@ -287,8 +316,8 @@ export default function Rate() {
 
                 <div className="mt-4 text-center">
                   <p className="text-[#a4a498] text-xs">TIME REMAINING</p>
-                  <p className={`text-lg font-bold ${ratingTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
-                    {ratingTimer !== null ? `${Math.floor(ratingTimer / 60)}:${String(ratingTimer % 60).padStart(2, '0')}` : '2:00'}
+                  <p className={`text-lg font-bold ${remainingSeconds !== null && remainingSeconds <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
+                    {remainingSeconds !== null ? `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, '0')}` : '2:00'}
                   </p>
                 </div>
               </div>
@@ -297,7 +326,7 @@ export default function Rate() {
                 <button
                   onClick={() => {
                     setShowRating(null);
-                    setRatingTimer(null);
+                    setRemainingSeconds(null);
                   }}
                   className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#2d2d1e]/80 flex items-center justify-center"
                 >

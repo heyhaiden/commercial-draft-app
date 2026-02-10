@@ -19,11 +19,17 @@ export default function MyDraft() {
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
-    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
-    if (!hasSeenOnboarding) {
-      setShowOnboarding(true);
-    }
   }, []);
+
+  // Show onboarding after draft is complete (when user has picks)
+  useEffect(() => {
+    if (myPicks.length > 0 && !picksLoading) {
+      const hasSeenPostDraftOnboarding = localStorage.getItem("hasSeenPostDraftOnboarding");
+      if (!hasSeenPostDraftOnboarding) {
+        setShowOnboarding(true);
+      }
+    }
+  }, [myPicks.length, picksLoading]);
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
@@ -33,11 +39,14 @@ export default function MyDraft() {
   // Use RoomDraftPick scoped to current room
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
     queryKey: ["myPicks", user?.id, roomCode],
-    queryFn: () => base44.entities.RoomDraftPick.filter({
-      user_email: user.id,
-      room_code: roomCode
-    }),
-    enabled: !!user && !!roomCode,
+    queryFn: () => {
+      if (!user?.id || !roomCode) return [];
+      return base44.entities.RoomDraftPick.filter({
+        user_email: user.id,
+        room_code: roomCode
+      });
+    },
+    enabled: !!user?.id && !!roomCode,
   });
 
   const { data: allPicks = [] } = useQuery({
