@@ -60,8 +60,9 @@ export default function Admin() {
   });
 
   const { data: allRatings = [] } = useQuery({
-    queryKey: ["allRatings"],
-    queryFn: () => base44.entities.Rating.list("-created_date", 500),
+    queryKey: ["allRatings", currentRoomCode],
+    queryFn: () => base44.entities.Rating.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
   });
 
   const gameState = gameStates[0];
@@ -100,8 +101,11 @@ export default function Admin() {
       // Stop any currently airing
       const currentlyAiring = brands.filter(b => b.is_airing);
       for (const b of currentlyAiring) {
-        // Calculate final average from all ratings
-        const brandRatings = allRatings.filter(r => r.brand_id === b.id);
+        // Calculate final average from ratings in current room only
+        const brandRatings = await base44.entities.Rating.filter({ 
+          brand_id: b.id,
+          room_code: currentRoomCode 
+        });
         if (brandRatings.length > 0) {
           const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
           const finalAvg = totalStars / brandRatings.length;
@@ -132,8 +136,11 @@ export default function Admin() {
 
   const stopAiringMutation = useMutation({
     mutationFn: async (brandId) => {
-      // Calculate final average from all ratings
-      const brandRatings = allRatings.filter(r => r.brand_id === brandId);
+      // Calculate final average from ratings in current room only
+      const brandRatings = await base44.entities.Rating.filter({ 
+        brand_id: brandId,
+        room_code: currentRoomCode 
+      });
       if (brandRatings.length > 0) {
         const totalStars = brandRatings.reduce((sum, r) => sum + r.stars, 0);
         const finalAvg = totalStars / brandRatings.length;
@@ -157,7 +164,10 @@ export default function Admin() {
 
   const clearRatingsMutation = useMutation({
     mutationFn: async (brandId) => {
-      const ratings = await base44.entities.Rating.filter({ brand_id: brandId });
+      const ratings = await base44.entities.Rating.filter({ 
+        brand_id: brandId,
+        room_code: currentRoomCode 
+      });
       for (const rating of ratings) {
         await base44.entities.Rating.delete(rating.id);
       }
@@ -307,6 +317,7 @@ export default function Admin() {
                   const stars = Math.floor(Math.random() * 5) + 1;
                   ratings.push(stars);
                   await base44.entities.Rating.create({
+                    room_code: currentRoomCode,
                     user_email: `sim_${Date.now()}_${i}@test.com`,
                     brand_id: brand.id,
                     brand_name: brand.brand_name,
@@ -398,12 +409,12 @@ export default function Admin() {
                   <p className="text-white/40 text-xs truncate">{brand.title}</p>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                 {brand.aired && (
-                   <div className="flex items-center gap-2">
-                     <span className="text-xs text-white/40">⭐ {(brand.average_rating || 0).toFixed(1)}</span>
-                     <span className="text-xs text-[#f4c542]">({allRatings.filter(r => r.brand_id === brand.id).length}/{uniqueUsers})</span>
-                   </div>
-                 )}
+                {brand.aired && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-white/40">⭐ {(brand.average_rating || 0).toFixed(1)}</span>
+                    <span className="text-xs text-[#f4c542]">({allRatings?.filter(r => r.brand_id === brand.id).length || 0}/{uniqueUsers})</span>
+                  </div>
+                )}
                   {brand.is_airing ? (
                     <Button size="sm" variant="destructive" onClick={() => stopAiringMutation.mutate(brand.id)} className="rounded-lg">
                       <Square className="w-3 h-3 mr-1" /> Stop
