@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { getUserIdentity, setCurrentRoomCode } from "@/components/utils/guestAuth";
-import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3 } from "lucide-react";
+import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
@@ -16,6 +16,7 @@ export default function CreateRoom() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState(null);
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,7 +88,9 @@ export default function CreateRoom() {
   const shareCode = () => {
     if (roomCode) {
       navigator.clipboard.writeText(roomCode);
-      toast.success("Code copied!");
+      setCopied(true);
+      toast.success("Code copied to clipboard!");
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -191,10 +194,14 @@ export default function CreateRoom() {
             </div>
             <Button
               onClick={shareCode}
-              className="w-full h-11 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2 text-sm"
+              className={`w-full h-11 rounded-2xl font-bold border flex items-center justify-center gap-2 text-sm transition-all ${
+                copied
+                  ? "bg-green-500/40 border-green-500/50 text-green-300"
+                  : "bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white border-[#6a6a5a]/30"
+              }`}
             >
-              <Share2 className="w-4 h-4" />
-              Copy Code to Share
+              {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
+              {copied ? "Copied!" : "Copy Code to Share"}
             </Button>
           </div>
 

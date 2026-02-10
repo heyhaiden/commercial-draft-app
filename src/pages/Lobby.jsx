@@ -164,7 +164,7 @@ export default function Lobby() {
           </button>
           <div className="text-center">
             <h1 className="text-white font-black italic text-xl">COMMERCIAL DRAFT</h1>
-            <p className="text-[#f4c542] text-xs font-medium">Super Bowl LVIII</p>
+            <p className="text-[#f4c542] text-xs font-medium">THE BIG GAME</p>
           </div>
           {isHost && (
             <button onClick={() => navigate(createPageUrl("Admin"))} className="w-12 h-12 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">

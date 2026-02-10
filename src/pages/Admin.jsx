@@ -3,7 +3,7 @@ import { base44 } from "@/api/base44Client";
 import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Play, Square, CheckCircle, ArrowLeft } from "lucide-react";
+import { Play, Square, CheckCircle, ArrowLeft, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
@@ -15,6 +15,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [failedImages, setFailedImages] = useState(new Set());
+  const [codeCopied, setCodeCopied] = useState(false);
   const roomCode = getCurrentRoomCode();
 
   // Safe image error handler - no XSS
@@ -237,7 +238,9 @@ export default function Admin() {
   const shareRoomCode = () => {
     if (rooms[0]?.room_code) {
       navigator.clipboard.writeText(rooms[0].room_code);
-      toast.success("Room code copied!");
+      setCodeCopied(true);
+      toast.success("Room code copied to clipboard!");
+      setTimeout(() => setCodeCopied(false), 2000);
     }
   };
 
@@ -256,12 +259,20 @@ export default function Admin() {
           {rooms[0] && (
             <button
               onClick={shareRoomCode}
-              className="px-4 py-2 rounded-xl bg-[#4a4a3a]/40 hover:bg-[#5a5a4a]/40 text-[#f4c542] font-bold text-lg flex items-center gap-2"
+              className={`px-4 py-2 rounded-xl font-bold text-lg flex items-center gap-2 transition-all ${
+                codeCopied
+                  ? "bg-green-500/30 text-green-300 border border-green-500/50"
+                  : "bg-[#4a4a3a]/40 hover:bg-[#5a5a4a]/40 text-[#f4c542]"
+              }`}
             >
-              <span className="text-2xl">{rooms[0].room_code}</span>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
+              <span className="text-2xl">{codeCopied ? "Copied!" : rooms[0].room_code}</span>
+              {codeCopied ? (
+                <Check className="w-5 h-5" />
+              ) : (
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                </svg>
+              )}
             </button>
           )}
         </div>
