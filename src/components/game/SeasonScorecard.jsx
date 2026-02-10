@@ -157,12 +157,13 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
                <div className="grid grid-cols-2 gap-3">
                  <Button 
                    onClick={async () => {
-                     const html = document.querySelector('.max-w-md');
-                     if (html) {
-                       const canvas = await import('html2canvas').then(m => m.default(html));
+                     const { default: html2canvas } = await import('html2canvas');
+                     const modal = document.querySelector('[class*="max-w-md"][class*="rounded-3xl"]');
+                     if (modal) {
+                       const canvas = await html2canvas(modal, { backgroundColor: '#1d1d0e' });
                        const link = document.createElement('a');
                        link.href = canvas.toDataURL();
-                       link.download = 'scorecard.png';
+                       link.download = `CommercialDraft-Scorecard-${playerData.displayName}-2026.png`;
                        link.click();
                      }
                    }}
