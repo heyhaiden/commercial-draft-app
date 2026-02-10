@@ -30,6 +30,12 @@ export default function MyDraft() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  const { data: roomBrandStates = [] } = useQuery({
+    queryKey: ["roomBrandStates", roomCode],
+    queryFn: () => base44.entities.RoomBrandState.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
+  });
+
   // Use RoomDraftPick scoped to current room
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
     queryKey: ["myPicks", user?.id, roomCode],
@@ -48,10 +54,10 @@ export default function MyDraft() {
 
   const queryClient = useQueryClient();
 
-  // Real-time sync for brand updates
+  // Real-time sync for room brand state
   useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    const unsubscribe = base44.entities.RoomBrandState.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
     });
     return unsubscribe;
   }, [queryClient]);
@@ -67,19 +73,19 @@ export default function MyDraft() {
 
   // Memoize rank calculation for performance
   const myRank = useMemo(() => {
-    // Create brand lookup map for O(1) access
-    const brandMap = new Map(brands.map(b => [b.id, b]));
+    // Create room brand state lookup map for O(1) access
+    const stateMap = new Map(roomBrandStates.map(s => [s.brand_id, s]));
 
     const userScores = {};
     allPicks.forEach(pick => {
       if (!userScores[pick.user_email]) userScores[pick.user_email] = 0;
-      const brand = brandMap.get(pick.brand_id);
-      if (brand?.aired) userScores[pick.user_email] += brand.points || 0;
+      const state = stateMap.get(pick.brand_id);
+      if (state?.aired) userScores[pick.user_email] += state.points || 0;
     });
 
     const sortedUsers = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
     return sortedUsers.findIndex(([email]) => email === user?.id) + 1;
-  }, [allPicks, brands, user?.id]);
+  }, [allPicks, roomBrandStates, user?.id]);
 
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
 
@@ -117,7 +123,7 @@ export default function MyDraft() {
             <div className="text-right">
               <p className="text-[#a4a498] text-xs">Current Rank</p>
               <p className="text-white text-3xl font-black">
-                {brands.filter(b => b.aired).length > 0 ? `#${myRank || "-"}` : "-"}
+                {roomBrandStates.filter(s => s.aired).length > 0 ? `#${myRank || "-"}` : "-"}
               </p>
             </div>
           </div>
@@ -157,8 +163,9 @@ export default function MyDraft() {
                     const brand = brands.find(b => b.id === pick.brand_id);
                     if (!brand) return null;
 
-                    const isAiring = brand.is_airing;
-                    const isPending = !brand.aired && !brand.is_airing;
+                    const state = roomBrandStates.find(s => s.brand_id === brand.id);
+                    const isAiring = state?.is_airing || false;
+                    const isPending = !state?.aired && !state?.is_airing;
 
                     return (
                       <motion.div
@@ -205,7 +212,7 @@ export default function MyDraft() {
                         ) : (
                           <>
                             <p className="text-green-400 text-xs">AIRED</p>
-                            <p className="text-white text-2xl font-black">{brand.points || 0}</p>
+                            <p className="text-white text-2xl font-black">{state?.points || 0}</p>
                             <p className="text-[#a4a498] text-xs">PTS</p>
                           </>
                         )}

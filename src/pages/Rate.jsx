@@ -27,6 +27,12 @@ export default function Rate() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  const { data: roomBrandStates = [] } = useQuery({
+    queryKey: ["roomBrandStates", roomCode],
+    queryFn: () => base44.entities.RoomBrandState.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
+  });
+
   // Filter ratings by room_code to scope to current game
   const { data: myRatings = [] } = useQuery({
     queryKey: ["myRatings", user?.id, roomCode],
@@ -34,15 +40,16 @@ export default function Rate() {
     enabled: !!user && !!roomCode,
   });
 
-  const airingBrand = brands.find(b => b.is_airing);
+  const airingState = roomBrandStates.find(s => s.is_airing);
+  const airingBrand = airingState ? brands.find(b => b.id === airingState.brand_id) : null;
   const ratedIds = new Set(myRatings.map(r => r.brand_id));
 
   const [ratingTimer, setRatingTimer] = useState(null);
 
-  // Real-time sync for brand updates (airing status, ratings)
+  // Real-time sync for room brand state
   useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    const unsubscribe = base44.entities.RoomBrandState.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
     });
     return unsubscribe;
   }, [queryClient]);
@@ -112,19 +119,38 @@ export default function Rate() {
         const finalAvg = allStars.reduce((sum, s) => sum + s, 0) / allStars.length;
         const finalPoints = Math.round(finalAvg * 20) - 10;
 
-        await base44.entities.Brand.update(brandId, {
-          is_airing: false,
-          aired: true,
-          average_rating: Math.round(finalAvg * 100) / 100,
-          total_ratings: allStars.length,
-          points: finalPoints,
+        // Update or create room brand state
+        const existing = await base44.entities.RoomBrandState.filter({ 
+          room_code: roomCode, 
+          brand_id: brandId 
         });
+        if (existing.length > 0) {
+          await base44.entities.RoomBrandState.update(existing[0].id, {
+            is_airing: false,
+            aired: true,
+            average_rating: Math.round(finalAvg * 100) / 100,
+            total_ratings: allStars.length,
+            points: finalPoints,
+          });
+        } else {
+          const brand = brands.find(b => b.id === brandId);
+          await base44.entities.RoomBrandState.create({
+            room_code: roomCode,
+            brand_id: brandId,
+            brand_name: brand?.brand_name,
+            is_airing: false,
+            aired: true,
+            average_rating: Math.round(finalAvg * 100) / 100,
+            total_ratings: allStars.length,
+            points: finalPoints,
+          });
+        }
         toast.success("All players rated! Ad complete.");
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myRatings"] });
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
       queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand"] });
       setShowRating(null);
       setSelectedStars(0);
@@ -159,7 +185,7 @@ export default function Rate() {
                 <p className="font-bold text-white text-lg">{airingBrand.brand_name} - {airingBrand.title}</p>
                 <div className="flex items-center gap-1 mt-1">
                   <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                  <span className="text-white font-bold">{(airingBrand.average_rating || 0).toFixed(1)}/5</span>
+                  <span className="text-white font-bold">{(airingState?.average_rating || 0).toFixed(1)}/5</span>
                 </div>
               </div>
               {!ratedIds.has(airingBrand.id) && (
@@ -174,7 +200,7 @@ export default function Rate() {
           </div>
         )}
 
-        {brands.filter(b => b.aired).length === 0 && !airingBrand && (
+        {roomBrandStates.filter(s => s.aired).length === 0 && !airingBrand && (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-[#4a4a3a]/20 flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">📺</span>
@@ -185,7 +211,9 @@ export default function Rate() {
         )}
 
         <div className="space-y-2">
-          {brands.filter(b => b.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0)).map(brand => {
+          {roomBrandStates.filter(s => s.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0)).map(state => {
+            const brand = brands.find(b => b.id === state.brand_id);
+            if (!brand) return null;
             const hasRated = ratedIds.has(brand.id);
             return (
               <div
@@ -201,7 +229,7 @@ export default function Rate() {
                   <p className="font-bold text-white">{brand.brand_name}</p>
                   <div className="flex items-center gap-1">
                     <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                    <span className="text-white text-sm">{(brand.average_rating || 0).toFixed(1)}</span>
+                    <span className="text-white text-sm">{(state.average_rating || 0).toFixed(1)}</span>
                   </div>
                 </div>
                 {!hasRated && (
