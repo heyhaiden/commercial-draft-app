@@ -16,7 +16,20 @@ export default function GlobalRatingModal() {
   const roomCode = getCurrentRoomCode();
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser);
+    getUserIdentity(base44).then(async (identity) => {
+      setUser(identity);
+      // Check if user is admin - they don't participate in ratings
+      if (!identity.isGuest) {
+        try {
+          const fullUser = await base44.auth.me();
+          if (fullUser.role === 'admin') {
+            setUser({ ...identity, isAdmin: true });
+          }
+        } catch (e) {
+          // Guest user, continue
+        }
+      }
+    });
   }, []);
 
   const { data: brands = [] } = useQuery({
@@ -155,7 +168,7 @@ export default function GlobalRatingModal() {
     },
   });
 
-  if (!user || !roomCode) return null;
+  if (!user || !roomCode || user.isAdmin) return null;
 
   return (
     <AnimatePresence>
