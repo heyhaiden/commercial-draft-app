@@ -95,10 +95,11 @@ export default function RoomDraft() {
   ), [roomPicks, user?.id]);
 
   const filteredBrands = useMemo(() => {
-    const available = brands.filter(b => !pickedBrandIds.has(b.id));
-    if (searchTerm === "" || searchTerm === "All Brands") return available;
-    return available.filter(b => b.category === searchTerm);
-  }, [brands, pickedBrandIds, searchTerm]);
+    // Show all brands (including picked ones, greyed out) when no filter
+    if (searchTerm === "" || searchTerm === "All Brands") return brands;
+    // Filter by category
+    return brands.filter(b => b.category === searchTerm);
+  }, [brands, searchTerm]);
 
   // Calculate current turn
   const [timeRemaining, setTimeRemaining] = useState(null);
@@ -384,15 +385,12 @@ export default function RoomDraft() {
 
         {/* Brands List */}
         <div className="p-4 space-y-2 pb-24">
-          {brands.map(brand => {
+          {filteredBrands.map(brand => {
             const isSelected = selectedBrand?.id === brand.id;
             const isPicked = pickedBrandIds.has(brand.id);
             const isMine = myPickedBrandIds.has(brand.id);
             const pickedByPlayer = roomPicks.find(p => p.brand_id === brand.id);
             const pickedPlayer = pickedByPlayer ? players.find(p => p.user_email === pickedByPlayer.user_email) : null;
-            const showBrand = !isPicked || searchTerm === "" || brand.category === searchTerm;
-
-            if (!showBrand) return null;
 
             return (
               <motion.button

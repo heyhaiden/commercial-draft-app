@@ -5,6 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Play, Square, CheckCircle, ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandCardSkeleton, StatCardSkeleton } from "@/components/common/LoadingSkeleton";
@@ -283,11 +284,54 @@ export default function Admin() {
           )}
         </div>
 
+        {/* Reset Brands for New Game */}
+        <div className="rounded-2xl bg-orange-500/20 border border-orange-400/30 p-4 mb-4">
+          <h3 className="font-bold text-sm mb-2 text-orange-400">New Game Setup</h3>
+          <p className="text-xs text-orange-300/70 mb-3">Reset all brands to fresh state (clears aired status & ratings)</p>
+          <Button
+            onClick={async () => {
+              if (!confirm("Reset ALL brands to fresh state? This clears all ratings and aired status.")) return;
+
+              toast.loading("Resetting all brands...");
+
+              // Reset all brands to fresh state
+              for (const brand of brands) {
+                await base44.entities.Brand.update(brand.id, {
+                  is_airing: false,
+                  aired: false,
+                  average_rating: 0,
+                  total_ratings: 0,
+                  points: 0,
+                  air_started_at: null,
+                });
+              }
+
+              // Delete all ratings (they're stale now)
+              const allRatingsToDelete = await base44.entities.Rating.list("-created_date", 1000);
+              for (const r of allRatingsToDelete) {
+                await base44.entities.Rating.delete(r.id);
+              }
+
+              queryClient.invalidateQueries();
+              toast.dismiss();
+              toast.success("✨ All brands reset! Ready for a fresh game.");
+            }}
+            className="w-full h-10 rounded-xl bg-orange-500/20 hover:bg-orange-500/30 text-orange-300 text-sm"
+          >
+            🔄 Reset All Brands for New Game
+          </Button>
+        </div>
+
         {/* Scoring Simulation */}
         <div className="rounded-2xl bg-blue-500/20 border border-blue-400/30 p-4 mb-4">
           <h3 className="font-bold text-sm mb-2 text-blue-400">Test Scoring & Complete Game</h3>
           <Button
             onClick={async () => {
+              if (!roomCode) {
+                toast.error("No room code found");
+                return;
+              }
+
               // 1. Stop any airing brands
               const airing = brands.filter(b => b.is_airing);
               for (const b of airing) {
@@ -300,44 +344,48 @@ export default function Admin() {
                 await base44.entities.Brand.update(b.id, { aired: true });
               }
 
-              // 3. Generate random scores for all brands
+              // 3. Generate random scores for all brands using room-scoped user IDs
               const allBrands = [...brands];
               for (const brand of allBrands) {
-                // Clear existing ratings
+                // Clear existing ratings for this brand in this room
                 const existingRatings = await base44.entities.Rating.filter({ brand_id: brand.id });
-                for (const r of existingRatings) {
+                const roomRatings = existingRatings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
+                for (const r of roomRatings) {
                   await base44.entities.Rating.delete(r.id);
                 }
 
-                // Create 3-5 random ratings
-                const numRatings = Math.floor(Math.random() * 3) + 3;
+                // Create ratings for each player in this room
                 const ratings = [];
-                for (let i = 0; i < numRatings; i++) {
+                for (let i = 0; i < currentRoomPlayers.length; i++) {
+                  const player = currentRoomPlayers[i];
                   const stars = Math.floor(Math.random() * 5) + 1;
                   ratings.push(stars);
+                  // Use room-scoped user ID format
                   await base44.entities.Rating.create({
-                    user_email: `sim_${Date.now()}_${i}@test.com`,
+                    user_email: `${roomCode}:${player.user_email}`,
                     brand_id: brand.id,
                     brand_name: brand.brand_name,
                     stars,
                   });
                 }
 
-                const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-                const points = Math.round(avgRating * 20) - 10;
+                if (ratings.length > 0) {
+                  const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+                  const points = Math.round(avgRating * 20) - 10;
 
-                await base44.entities.Brand.update(brand.id, {
-                  average_rating: Math.round(avgRating * 100) / 100,
-                  total_ratings: numRatings,
-                  points,
-                  aired: true,
-                  is_airing: false,
-                });
+                  await base44.entities.Brand.update(brand.id, {
+                    average_rating: Math.round(avgRating * 100) / 100,
+                    total_ratings: ratings.length,
+                    points,
+                    aired: true,
+                    is_airing: false,
+                  });
+                }
               }
 
               queryClient.invalidateQueries();
-              toast.success("🎉 Game completed! All brands scored randomly.");
-              
+              toast.success("🎉 Game completed! All brands scored.");
+
               // Navigate to leaderboard after a delay
               setTimeout(() => {
                 navigate(createPageUrl("Leaderboard"));
