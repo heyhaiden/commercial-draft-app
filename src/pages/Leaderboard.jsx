@@ -207,7 +207,6 @@ export default function Leaderboard() {
               </div>
               {(hasAnyRatings && leaderboard.length >= 3 ? leaderboard.slice(3) : leaderboard).map((entry, idx) => {
             const rank = hasAnyRatings && leaderboard.length >= 3 ? idx + 4 : idx + 1;
-            const rank = idx + 4;
             const isMe = entry.email === user?.id;
             const player = playerMap.get(entry.email);
             const playerIcon = player?.icon ? ICONS.find(i => i.id === player.icon)?.emoji : "👤";
