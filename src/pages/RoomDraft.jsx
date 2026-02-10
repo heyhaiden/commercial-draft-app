@@ -26,7 +26,13 @@ export default function RoomDraft() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser);
+    getUserIdentity(base44).then(setUser).catch((error) => {
+      // Silently handle errors - getUserIdentity already handles fallback
+      // Don't log 401/403 errors as they're expected for guest users
+      if (error?.status !== 401 && error?.status !== 403) {
+        console.error('Failed to get user identity:', error);
+      }
+    });
   }, []);
 
   const { data: rooms = [] } = useQuery({

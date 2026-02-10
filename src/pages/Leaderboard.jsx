@@ -4,19 +4,25 @@ import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAut
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Crown } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
-import { getRoomBrandStates } from "@/components/utils/brandState";
+import { getRoomBrandStates } from "@/utils/brandState";
 
 export default function Leaderboard() {
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
-  const [currentRoomCode, setCurrentRoomCode] = useState(null);
+  // Initialize currentRoomCode immediately from sessionStorage to avoid uninitialized variable errors
+  const currentRoomCode = getCurrentRoomCode();
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser);
-    setCurrentRoomCode(getCurrentRoomCode());
+    getUserIdentity(base44).then(setUser).catch((error) => {
+      // Silently handle errors - getUserIdentity already handles fallback
+      // Don't log 401/403 errors as they're expected for guest users
+      if (error?.status !== 401 && error?.status !== 403) {
+        console.error('Failed to get user identity:', error);
+      }
+    });
   }, []);
 
   const { data: brands = [] } = useQuery({
@@ -65,7 +71,7 @@ export default function Leaderboard() {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
     const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings"] });
+      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", currentRoomCode] });
     });
     return () => {
       unsubscribeRoom();
@@ -76,11 +82,12 @@ export default function Leaderboard() {
 
   // Real-time sync for room draft picks
   useEffect(() => {
+    if (!currentRoomCode) return;
     const unsubscribe = base44.entities.RoomDraftPick.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomPicks"] });
+      queryClient.invalidateQueries({ queryKey: ["allRoomPicks", currentRoomCode] });
     });
     return unsubscribe;
-  }, [queryClient]);
+  }, [queryClient, currentRoomCode]);
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ["allPlayers", currentRoomCode],

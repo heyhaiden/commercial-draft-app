@@ -18,7 +18,13 @@ export default function Rate() {
   const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser);
+    getUserIdentity(base44).then(setUser).catch((error) => {
+      // Silently handle errors - getUserIdentity already handles fallback
+      // Don't log 401/403 errors as they're expected for guest users
+      if (error?.status !== 401 && error?.status !== 403) {
+        console.error('Failed to get user identity:', error);
+      }
+    });
   }, []);
 
   const { data: brands = [] } = useQuery({
@@ -76,8 +82,10 @@ export default function Rate() {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
     const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings"] });
-      queryClient.invalidateQueries({ queryKey: ["myRatings"] });
+      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", roomCode] });
+      if (scopedUserId) {
+        queryClient.invalidateQueries({ queryKey: ["myRatings", scopedUserId] });
+      }
     });
     return () => {
       unsubscribeRoom();
@@ -186,9 +194,11 @@ export default function Rate() {
       }
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["myRatings"] });
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings"] });
-      queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand"] });
+      if (scopedUserId) {
+        queryClient.invalidateQueries({ queryKey: ["myRatings", scopedUserId] });
+      }
+      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", roomCode] });
+      queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand", showRating?.id, roomCode] });
       queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
       setShowRating(null);
       setSelectedStars(0);

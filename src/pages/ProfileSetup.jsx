@@ -28,6 +28,12 @@ export default function ProfileSetup() {
   useEffect(() => {
     getUserIdentity(base44).then(identity => {
       setDisplayName(identity.name || "");
+    }).catch((error) => {
+      // Silently handle errors - getUserIdentity already handles fallback
+      // Don't log 401/403 errors as they're expected for guest users
+      if (error?.status !== 401 && error?.status !== 403) {
+        console.error('Failed to get user identity:', error);
+      }
     });
   }, []);
 

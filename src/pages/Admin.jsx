@@ -9,7 +9,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandCardSkeleton, StatCardSkeleton } from "@/components/common/LoadingSkeleton";
-import { getRoomBrandStates } from "@/components/utils/brandState";
+import { getRoomBrandStates } from "@/utils/brandState";
 
 export default function Admin() {
   const [user, setUser] = useState(null);
@@ -29,6 +29,12 @@ export default function Admin() {
   useEffect(() => {
     getUserIdentity(base44).then(identity => {
       setUser(identity);
+    }).catch((error) => {
+      // Silently handle errors - getUserIdentity already handles fallback
+      // Don't log 401/403 errors as they're expected for guest users
+      if (error?.status !== 401 && error?.status !== 403) {
+        console.error('Failed to get user identity:', error);
+      }
     });
   }, []);
 
@@ -48,7 +54,7 @@ export default function Admin() {
   // Real-time sync for ratings
   useEffect(() => {
     const unsubscribe = base44.entities.Rating.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["allRatings"] });
+      queryClient.invalidateQueries({ queryKey: ["allRatings", roomCode] });
     });
     return unsubscribe;
   }, [queryClient]);
@@ -137,7 +143,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["gameRooms"] });
+      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
       toast.success("Commercial is now airing!");
     },
   });
@@ -157,7 +163,7 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["gameRooms"] });
+      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
       toast.success("Commercial stopped");
     },
   });
@@ -213,20 +219,12 @@ export default function Admin() {
     },
   });
 
-  // Note: We already have rooms query above, but keeping this for backward compatibility
-  const { data: allRooms = [] } = useQuery({
-    queryKey: ["gameRooms"],
-    queryFn: () => base44.entities.GameRoom.list("-created_date", 1),
+  // Get players for current room only (optimized - server-side filter)
+  const { data: currentRoomPlayers = [] } = useQuery({
+    queryKey: ["allPlayers", roomCode],
+    queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
   });
-
-  const { data: allPlayers = [] } = useQuery({
-    queryKey: ["allPlayers"],
-    queryFn: () => base44.entities.Player.list("-created_date", 1000),
-  });
-
-  // Filter to current room only (use roomCode from getCurrentRoomCode, fallback to allRooms)
-  const currentRoomCode = roomCode || allRooms[0]?.room_code;
-  const currentRoomPlayers = allPlayers.filter(p => p.room_code === currentRoomCode);
   const uniqueUsers = currentRoomPlayers.length;
 
   // Calculate room-scoped brand states

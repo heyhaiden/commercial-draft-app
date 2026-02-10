@@ -5,14 +5,15 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
 import OnboardingTooltip from "@/components/common/OnboardingTooltip";
 import { motion } from "framer-motion";
-import { getRoomBrandStates } from "@/components/utils/brandState";
+import { getRoomBrandStates } from "@/utils/brandState";
 
 export default function MyDraft() {
   const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [failedImages, setFailedImages] = useState(new Set());
-  const [roomCode, setRoomCode] = useState(null);
+  // Initialize roomCode immediately from sessionStorage to avoid uninitialized variable errors
+  const roomCode = getCurrentRoomCode();
 
   // Safe image error handler - no XSS
   const handleImageError = useCallback((brandId) => {
@@ -22,9 +23,11 @@ export default function MyDraft() {
   useEffect(() => {
     getUserIdentity(base44).then(setUser).catch((error) => {
       // Silently handle errors - getUserIdentity already handles fallback
-      console.error('Failed to get user identity:', error);
+      // Don't log 401/403 errors as they're expected for guest users
+      if (error?.status !== 401 && error?.status !== 403) {
+        console.error('Failed to get user identity:', error);
+      }
     });
-    setRoomCode(getCurrentRoomCode());
   }, []);
   
   const { data: brands = [] } = useQuery({
@@ -96,7 +99,7 @@ export default function MyDraft() {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
     const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings"] });
+      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", roomCode] });
     });
     return () => {
       unsubscribeRoom();
@@ -107,12 +110,13 @@ export default function MyDraft() {
 
   // Real-time sync for draft picks (room-scoped)
   useEffect(() => {
+    if (!roomCode) return;
     const unsubscribe = base44.entities.RoomDraftPick.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["myPicks"] });
-      queryClient.invalidateQueries({ queryKey: ["allPicks"] });
+      queryClient.invalidateQueries({ queryKey: ["myPicks", user?.id, roomCode] });
+      queryClient.invalidateQueries({ queryKey: ["allPicks", roomCode] });
     });
     return unsubscribe;
-  }, [queryClient]);
+  }, [queryClient, roomCode, user?.id]);
 
   // Memoize rank calculation for performance using room-scoped brand states
   const myRank = useMemo(() => {
