@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/components/utils/guestAuth";
+import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
 import OnboardingTooltip from "@/components/common/OnboardingTooltip";
@@ -8,10 +8,9 @@ import { motion } from "framer-motion";
 
 export default function MyDraft() {
   const [user, setUser] = useState(null);
-  const [showScorecard, setShowScorecard] = useState(false);
-  const [hasShownScorecard, setHasShownScorecard] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [failedImages, setFailedImages] = useState(new Set());
+  const roomCode = getCurrentRoomCode();
 
   // Safe image error handler - no XSS
   const handleImageError = useCallback((brandId) => {
@@ -26,20 +25,25 @@ export default function MyDraft() {
     }
   }, []);
 
-  const { data: brands = [], isLoading: brandsLoading } = useQuery({
+  const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  // Use RoomDraftPick scoped to current room
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
-    queryKey: ["myPicks", user?.id],
-    queryFn: () => base44.entities.DraftPick.filter({ user_email: user.id, locked: true }),
-    enabled: !!user,
+    queryKey: ["myPicks", user?.id, roomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({
+      user_email: user.id,
+      room_code: roomCode
+    }),
+    enabled: !!user && !!roomCode,
   });
 
   const { data: allPicks = [] } = useQuery({
-    queryKey: ["allPicks"],
-    queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
+    queryKey: ["allPicks", roomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
   });
 
   const queryClient = useQueryClient();
@@ -52,9 +56,9 @@ export default function MyDraft() {
     return unsubscribe;
   }, [queryClient]);
 
-  // Real-time sync for draft picks
+  // Real-time sync for draft picks (room-scoped)
   useEffect(() => {
-    const unsubscribe = base44.entities.DraftPick.subscribe((event) => {
+    const unsubscribe = base44.entities.RoomDraftPick.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["myPicks"] });
       queryClient.invalidateQueries({ queryKey: ["allPicks"] });
     });

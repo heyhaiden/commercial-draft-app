@@ -21,6 +21,19 @@ export function setGuestName(name) {
   localStorage.setItem('guestName', name);
 }
 
+// Room session management - scopes data to current game
+export function setCurrentRoomCode(roomCode) {
+  sessionStorage.setItem('currentRoomCode', roomCode);
+}
+
+export function getCurrentRoomCode() {
+  return sessionStorage.getItem('currentRoomCode');
+}
+
+export function clearCurrentRoom() {
+  sessionStorage.removeItem('currentRoomCode');
+}
+
 export async function getUserIdentity(base44) {
   try {
     const user = await base44.auth.me();

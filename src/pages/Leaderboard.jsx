@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/components/utils/guestAuth";
+import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TrendingUp, Crown } from "lucide-react";
+import { Crown } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
 
 export default function Leaderboard() {
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
+  const currentRoomCode = getCurrentRoomCode();
 
   const queryClient = useQueryClient();
 
@@ -20,13 +21,6 @@ export default function Leaderboard() {
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
   });
-
-  const { data: rooms = [] } = useQuery({
-    queryKey: ["gameRooms"],
-    queryFn: () => base44.entities.GameRoom.list("-created_date", 1),
-  });
-
-  const currentRoomCode = rooms[0]?.room_code;
 
   const { data: allRoomPicks = [] } = useQuery({
     queryKey: ["allRoomPicks", currentRoomCode],

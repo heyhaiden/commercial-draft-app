@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/components/utils/guestAuth";
+import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
@@ -13,6 +13,7 @@ export default function Rate() {
   const [showRating, setShowRating] = useState(null);
   const [selectedStars, setSelectedStars] = useState(0);
   const queryClient = useQueryClient();
+  const roomCode = getCurrentRoomCode();
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
@@ -23,10 +24,11 @@ export default function Rate() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  // Filter ratings by room_code to scope to current game
   const { data: myRatings = [] } = useQuery({
-    queryKey: ["myRatings", user?.id],
-    queryFn: () => base44.entities.Rating.filter({ user_email: user.id }),
-    enabled: !!user,
+    queryKey: ["myRatings", user?.id, roomCode],
+    queryFn: () => base44.entities.Rating.filter({ user_email: user.id, room_code: roomCode }),
+    enabled: !!user && !!roomCode,
   });
 
   const airingBrand = brands.find(b => b.is_airing);
@@ -65,15 +67,18 @@ export default function Rate() {
     }
   }, [ratingTimer, showRating]);
 
+  // Get players for current room only
   const { data: allPlayers = [] } = useQuery({
-    queryKey: ["allPlayers"],
-    queryFn: () => base44.entities.Player.list("-created_date", 1000),
+    queryKey: ["allPlayers", roomCode],
+    queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
   });
 
+  // Get ratings for brand in current room
   const { data: allRatingsForBrand = [] } = useQuery({
-    queryKey: ["allRatingsForBrand", showRating?.id],
-    queryFn: () => base44.entities.Rating.filter({ brand_id: showRating.id }),
-    enabled: !!showRating,
+    queryKey: ["allRatingsForBrand", showRating?.id, roomCode],
+    queryFn: () => base44.entities.Rating.filter({ brand_id: showRating.id, room_code: roomCode }),
+    enabled: !!showRating && !!roomCode,
   });
 
   const rateMutation = useMutation({
@@ -81,15 +86,21 @@ export default function Rate() {
       const { brandId, stars } = variables;
       const brand = brands.find(b => b.id === brandId);
       toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
+
+      // Include room_code to scope rating to current game
       await base44.entities.Rating.create({
         user_email: user.id,
         brand_id: brandId,
         brand_name: brand?.brand_name || "",
+        room_code: roomCode,
         stars,
       });
 
-      // Check if all players have rated
-      const currentRatings = await base44.entities.Rating.filter({ brand_id: brandId });
+      // Check if all players in this room have rated
+      const currentRatings = await base44.entities.Rating.filter({
+        brand_id: brandId,
+        room_code: roomCode
+      });
       const totalPlayers = allPlayers.length;
 
       if (currentRatings.length + 1 >= totalPlayers) {

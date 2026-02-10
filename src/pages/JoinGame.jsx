@@ -2,7 +2,7 @@ import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
-import { getUserIdentity } from "@/components/utils/guestAuth";
+import { getUserIdentity, setCurrentRoomCode } from "@/components/utils/guestAuth";
 import { ArrowLeft, Bookmark, Delete } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -70,6 +70,9 @@ export default function JoinGame() {
       }
 
       const userIdentity = await getUserIdentity(base44);
+
+      // Store room code for session-scoped queries
+      setCurrentRoomCode(code);
 
       // Check if user is the host - skip profile setup
       if (userIdentity.id === room.host_email) {
