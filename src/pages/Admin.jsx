@@ -14,6 +14,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [failedImages, setFailedImages] = useState(new Set());
+  const [copied, setCopied] = useState(false);
 
   // Safe image error handler - no XSS
   const handleImageError = useCallback((brandId) => {
@@ -238,7 +239,8 @@ export default function Admin() {
   const shareRoomCode = () => {
     if (rooms[0]?.room_code) {
       navigator.clipboard.writeText(rooms[0].room_code);
-      toast.success("Room code copied!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -259,7 +261,7 @@ export default function Admin() {
               onClick={shareRoomCode}
               className="px-4 py-2 rounded-xl bg-[#4a4a3a]/40 hover:bg-[#5a5a4a]/40 text-[#f4c542] font-bold text-lg flex items-center gap-2"
             >
-              <span className="text-2xl">{rooms[0].room_code}</span>
+              <span className="text-2xl">{copied ? "Copied!" : rooms[0].room_code}</span>
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
               </svg>

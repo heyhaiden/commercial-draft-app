@@ -16,6 +16,7 @@ export default function CreateRoom() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState(null);
+  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -87,7 +88,8 @@ export default function CreateRoom() {
   const shareCode = () => {
     if (roomCode) {
       navigator.clipboard.writeText(roomCode);
-      toast.success("Copied to clipboard!");
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
     }
   };
 
@@ -194,7 +196,7 @@ export default function CreateRoom() {
               className="w-full h-11 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2 text-sm"
             >
               <Share2 className="w-4 h-4" />
-              Copy Code to Share
+              {copied ? "Copied!" : "Copy Code to Share"}
             </Button>
           </div>
 
