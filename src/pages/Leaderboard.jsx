@@ -21,9 +21,17 @@ export default function Leaderboard() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
-  const { data: allPicks = [] } = useQuery({
-    queryKey: ["allPicks"],
-    queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["gameRooms"],
+    queryFn: () => base44.entities.GameRoom.list("-created_date", 1),
+  });
+
+  const currentRoomCode = rooms[0]?.room_code;
+
+  const { data: allRoomPicks = [] } = useQuery({
+    queryKey: ["allRoomPicks", currentRoomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
   });
 
   // Real-time sync for brand scores
@@ -34,28 +42,38 @@ export default function Leaderboard() {
     return unsubscribe;
   }, [queryClient]);
 
-  // Real-time sync for draft picks
+  // Real-time sync for room draft picks
   useEffect(() => {
-    const unsubscribe = base44.entities.DraftPick.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["allPicks"] });
+    const unsubscribe = base44.entities.RoomDraftPick.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["allRoomPicks"] });
     });
     return unsubscribe;
   }, [queryClient]);
 
   const { data: allPlayers = [] } = useQuery({
-    queryKey: ["allPlayers"],
-    queryFn: () => base44.entities.Player.list("-created_date", 1000),
+    queryKey: ["allPlayers", currentRoomCode],
+    queryFn: () => base44.entities.Player.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
   });
 
   // Memoize leaderboard calculation for performance
   const { leaderboard, myRank, hasAnyRatings } = useMemo(() => {
+    if (!currentRoomCode || allRoomPicks.length === 0) {
+      return { leaderboard: [], myRank: 0, hasAnyRatings: false };
+    }
+
     // Create brand lookup map for O(1) access
     const brandMap = new Map(brands.map(b => [b.id, b]));
 
     const userScores = {};
-    allPicks.forEach(pick => {
+    allRoomPicks.forEach(pick => {
       if (!userScores[pick.user_email]) {
-        userScores[pick.user_email] = { name: pick.user_name, score: 0, picks: [] };
+        const player = allPlayers.find(p => p.user_email === pick.user_email);
+        userScores[pick.user_email] = { 
+          name: player?.display_name || pick.user_email, 
+          score: 0, 
+          picks: [] 
+        };
       }
       const brand = brandMap.get(pick.brand_id);
       userScores[pick.user_email].picks.push({
@@ -78,7 +96,7 @@ export default function Leaderboard() {
       myRank: sorted.findIndex(e => e.email === user?.id) + 1,
       hasAnyRatings: brands.some(b => b.aired),
     };
-  }, [allPicks, brands, user?.id]);
+  }, [allRoomPicks, brands, user?.id, allPlayers, currentRoomCode]);
 
   // Memoize player lookup map for O(1) access in render
   const playerMap = useMemo(() =>
@@ -98,9 +116,12 @@ export default function Leaderboard() {
   }, [isGameComplete, hasShownScorecard]);
 
   const { data: myPicks = [] } = useQuery({
-    queryKey: ["myPicks", user?.id],
-    queryFn: () => base44.entities.DraftPick.filter({ user_email: user.id, locked: true }),
-    enabled: !!user,
+    queryKey: ["myPicks", user?.id, currentRoomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({ 
+      user_email: user.id,
+      room_code: currentRoomCode 
+    }),
+    enabled: !!user && !!currentRoomCode,
   });
 
   const playerData = user ? {

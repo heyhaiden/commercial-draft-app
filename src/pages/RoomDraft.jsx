@@ -96,7 +96,8 @@ export default function RoomDraft() {
 
   const filteredBrands = useMemo(() => {
     const available = brands.filter(b => !pickedBrandIds.has(b.id));
-    return available.filter(b => searchTerm === "" || b.category === searchTerm);
+    if (searchTerm === "" || searchTerm === "All Brands") return available;
+    return available.filter(b => b.category === searchTerm);
   }, [brands, pickedBrandIds, searchTerm]);
 
   // Calculate current turn
@@ -244,12 +245,12 @@ export default function RoomDraft() {
   return (
     <div className="min-h-screen bg-[#3d3d2e] text-white">
       <div className="max-w-md mx-auto">
-        {/* Draft Order Header */}
-        <div className="bg-[#2d2d1e] border-b border-[#5a5a4a]/30 p-4">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-white font-bold">Draft Order</h2>
-            <div className="flex items-center gap-2">
-              {isHost && (
+        {/* Draft Order Header - Admin Only */}
+        {isHost && (
+          <div className="bg-[#2d2d1e] border-b border-[#5a5a4a]/30 p-4">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-white font-bold">Draft Order</h2>
+              <div className="flex items-center gap-2">
                 <button
                   onClick={() => {
                     if (confirm("Force advance to next turn?")) {
@@ -265,57 +266,59 @@ export default function RoomDraft() {
                 >
                   Unstuck
                 </button>
-              )}
-              <span className="text-[#a4a498] text-sm">Round {currentRound}/5</span>
+                <span className="text-[#a4a498] text-sm">Round {currentRound}/5</span>
+              </div>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-2">
+              {sortedPlayers.map((player, idx) => {
+                const isCurrent = currentTurnPlayer?.user_email === player.user_email;
+                const playerPicks = roomPicks.filter(p => p.user_email === player.user_email).length;
+                const hasCompleted = playerPicks >= 5;
+                
+                return (
+                  <div
+                    key={player.id}
+                    className={cn(
+                      "flex-shrink-0 w-16 rounded-xl p-2 text-center transition-all",
+                      isCurrent && "bg-gradient-to-br from-[#f4c542]/30 to-[#d4a532]/30 border-2 border-[#f4c542]",
+                      !isCurrent && hasCompleted && "opacity-40",
+                      !isCurrent && !hasCompleted && "bg-[#3d3d2e]"
+                    )}
+                  >
+                    <div className={cn(
+                      "text-2xl mb-1",
+                      isCurrent && "animate-bounce"
+                    )}>
+                      {getPlayerIcon(player)}
+                    </div>
+                    <p className="text-[10px] text-white font-bold truncate">{player.display_name}</p>
+                    <p className="text-[9px] text-[#a4a498]">{playerPicks}/5</p>
+                  </div>
+                );
+              })}
             </div>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide px-2">
-            {sortedPlayers.map((player, idx) => {
-              const isCurrent = currentTurnPlayer?.user_email === player.user_email;
-              const playerPicks = roomPicks.filter(p => p.user_email === player.user_email).length;
-              const hasCompleted = playerPicks >= 5;
-              
-              return (
-                <div
-                  key={player.id}
-                  className={cn(
-                    "flex-shrink-0 w-16 rounded-xl p-2 text-center transition-all",
-                    isCurrent && "bg-gradient-to-br from-[#f4c542]/30 to-[#d4a532]/30 border-2 border-[#f4c542]",
-                    !isCurrent && hasCompleted && "opacity-40",
-                    !isCurrent && !hasCompleted && "bg-[#3d3d2e]"
-                  )}
-                >
-                  <div className={cn(
-                    "text-2xl mb-1",
-                    isCurrent && "animate-bounce"
-                  )}>
-                    {getPlayerIcon(player)}
-                  </div>
-                  <p className="text-[10px] text-white font-bold truncate">{player.display_name}</p>
-                  <p className="text-[9px] text-[#a4a498]">{playerPicks}/5</p>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+        )}
 
-        {/* Turn Banner */}
+        {/* Turn Banner - Sticky */}
         <div className={cn(
-          "p-4 border-b border-[#5a5a4a]/30",
+          "sticky top-0 z-10 p-4 border-b border-[#5a5a4a]/30",
           isMyTurn ? "bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20" : "bg-[#2d2d1e]"
         )}>
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center text-2xl flex-shrink-0 relative">
-              {currentTurnIcon}
-              {isMyTurn && (
-                <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-[#2d2d1e] animate-pulse" />
-              )}
-            </div>
-            <div className="flex-1">
-              <p className="text-[#a4a498] text-xs font-bold">
-                {isMyTurn ? "🎯 YOUR TURN" : "CURRENT PICK"}
-              </p>
-              <p className="font-black text-lg">{currentTurnPlayer.display_name}</p>
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center text-2xl flex-shrink-0 relative">
+                {currentTurnIcon}
+                {isMyTurn && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-[#2d2d1e] animate-pulse" />
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-[#a4a498] text-xs font-bold">
+                  {isMyTurn ? "🎯 YOUR TURN" : "CURRENT PICK"}
+                </p>
+                <p className="font-black text-lg">{currentTurnPlayer.display_name}</p>
+              </div>
             </div>
             {room.round_timer && (
               <div className="relative w-16 h-16 flex-shrink-0">
@@ -350,43 +353,13 @@ export default function RoomDraft() {
               </div>
             )}
           </div>
+          {/* My Picks Count */}
+          <div className="text-center">
+            <p className="text-[#a4a498] text-xs">My Picks: {myPickedBrandIds.size}/5</p>
+          </div>
         </div>
 
-        {/* My Picks Section */}
-        {myPickedBrandIds.size > 0 && (
-          <div className="p-4 border-b border-[#5a5a4a]/30 bg-[#2d2d1e]">
-            <h3 className="text-xs font-bold text-[#a4a498] mb-2 uppercase tracking-wider">My Draft ({myPickedBrandIds.size}/5)</h3>
-            <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-              {roomPicks
-                .filter(p => p.user_email === user?.id)
-                .map(pick => {
-                  const brand = brands.find(b => b.id === pick.brand_id);
-                  if (!brand) return null;
-                  return (
-                    <div
-                      key={pick.id}
-                      className="flex-shrink-0 w-16 rounded-xl bg-green-500/10 border border-green-400/30 p-2 text-center"
-                    >
-                      <div className="w-10 h-10 mx-auto rounded-lg bg-white flex items-center justify-center p-1.5 mb-1">
-                        {failedImages.has(brand.id) ? (
-                          <span className="font-bold text-gray-700 text-xs">{brand.brand_name?.[0]}</span>
-                        ) : (
-                          <img
-                            src={brand.logo_url}
-                            alt={brand.brand_name}
-                            className="w-full h-full object-contain"
-                            onError={() => handleImageError(brand.id)}
-                          />
-                        )}
-                      </div>
-                      <p className="text-[9px] text-white font-bold truncate">{brand.brand_name}</p>
-                      <p className="text-[8px] text-green-400">R{pick.round}</p>
-                    </div>
-                  );
-                })}
-            </div>
-          </div>
-        )}
+
 
         {/* Category Filter */}
         <div className="p-4 border-b border-[#5a5a4a]/30">
@@ -461,15 +434,7 @@ export default function RoomDraft() {
                 </div>
                 <div className="flex-1">
                   <p className="font-bold text-white">{brand.brand_name}</p>
-                  <div className="flex items-center gap-2 mt-0.5">
-                    <span className="text-xs">
-                      {brand.category === "Tech" ? "💻" : 
-                       brand.category === "Auto" ? "🚗" : 
-                       brand.category === "Food & Beverage" ? "🍔" : 
-                       brand.category === "Entertainment" ? "🎬" : "✨"}
-                    </span>
-                    <p className="text-xs text-[#a4a498]">{brand.category}</p>
-                  </div>
+                  <p className="text-xs text-[#a4a498]">{brand.title}</p>
                   {isPicked && pickedPlayer && (
                     <p className="text-[10px] text-[#f4c542] mt-1">
                       {getPlayerIcon(pickedPlayer)} {pickedPlayer.display_name}
