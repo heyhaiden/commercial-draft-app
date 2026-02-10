@@ -43,16 +43,22 @@ export default function Leaderboard() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  const { data: roomBrandStates = [] } = useQuery({
+    queryKey: ["roomBrandStates", currentRoomCode],
+    queryFn: () => base44.entities.RoomBrandState.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
+  });
+
   const { data: allRoomPicks = [] } = useQuery({
     queryKey: ["allRoomPicks", currentRoomCode],
     queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: currentRoomCode }),
     enabled: !!currentRoomCode,
   });
 
-  // Real-time sync for brand scores
+  // Real-time sync for room brand state
   useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["brands"] });
+    const unsubscribe = base44.entities.RoomBrandState.subscribe((event) => {
+      queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
     });
     return unsubscribe;
   }, [queryClient]);
@@ -78,8 +84,8 @@ export default function Leaderboard() {
       return { leaderboard: [], myRank: 0, hasAnyRatings: false };
     }
 
-    // Create brand lookup map for O(1) access
-    const brandMap = new Map(brands.map(b => [b.id, b]));
+    // Create room brand state lookup map for O(1) access
+    const stateMap = new Map(roomBrandStates.map(s => [s.brand_id, s]));
 
     const userScores = {};
     
@@ -102,15 +108,15 @@ export default function Leaderboard() {
           picks: [] 
         };
       }
-      const brand = brandMap.get(pick.brand_id);
+      const state = stateMap.get(pick.brand_id);
       userScores[pick.user_email].picks.push({
         brand_name: pick.brand_name,
-        points: brand?.points || 0,
-        aired: brand?.aired || false,
-        rating: brand?.average_rating || 0
+        points: state?.points || 0,
+        aired: state?.aired || false,
+        rating: state?.average_rating || 0
       });
-      if (brand?.aired) {
-        userScores[pick.user_email].score += brand.points || 0;
+      if (state?.aired) {
+        userScores[pick.user_email].score += state.points || 0;
       }
     });
 
@@ -121,9 +127,9 @@ export default function Leaderboard() {
     return {
       leaderboard: sorted,
       myRank: sorted.findIndex(e => e.email === user?.id) + 1,
-      hasAnyRatings: brands.some(b => b.aired),
+      hasAnyRatings: roomBrandStates.some(s => s.aired),
     };
-  }, [allRoomPicks, brands, user?.id, allPlayers, currentRoomCode]);
+  }, [allRoomPicks, roomBrandStates, user?.id, allPlayers, currentRoomCode]);
 
   // Memoize player lookup map for O(1) access in render
   const playerMap = useMemo(() =>
@@ -131,9 +137,9 @@ export default function Leaderboard() {
     [allPlayers]
   );
 
-  // Check if all brands have been aired and rated
-  const allBrandsAired = brands.length > 0 && brands.every(b => b.aired || b.is_airing === false);
-  const isGameComplete = allBrandsAired && brands.filter(b => b.aired).length === brands.length;
+  // Check if all brands have been aired and rated in this room
+  const allBrandsAired = brands.length > 0 && brands.length === roomBrandStates.filter(s => s.aired).length;
+  const isGameComplete = allBrandsAired;
 
   useEffect(() => {
     if (isGameComplete && !hasShownScorecard) {
