@@ -53,11 +53,12 @@ export default function Admin() {
 
   // Real-time sync for ratings
   useEffect(() => {
+    if (!roomCode) return;
     const unsubscribe = base44.entities.Rating.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["allRatings", roomCode] });
     });
     return unsubscribe;
-  }, [queryClient]);
+  }, [queryClient, roomCode]);
 
   const { data: gameStates = [] } = useQuery({
     queryKey: ["gameState"],
@@ -104,6 +105,9 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["gameState"] });
       toast.success("Game phase updated");
     },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update game phase");
+    },
   });
 
   const startDraftMutation = useMutation({
@@ -119,6 +123,9 @@ export default function Admin() {
       queryClient.invalidateQueries({ queryKey: ["gameState"] });
       toast.success("Draft started! 2 minute timer running.");
     },
+    onError: (error) => {
+      toast.error(error.message || "Failed to start draft");
+    },
   });
 
   const airCommercialMutation = useMutation({
@@ -126,13 +133,6 @@ export default function Admin() {
       if (!currentRoom || !roomCode) {
         toast.error("No room found");
         return;
-      }
-      
-      // Stop any currently airing brand in this room
-      if (currentRoom.current_airing_brand_id) {
-        // Calculate final average from room-scoped ratings
-        const brandRatings = allRatings.filter(r => r.brand_id === currentRoom.current_airing_brand_id);
-        // Note: We don't update Brand entity - state is calculated from ratings
       }
       
       // Start new one - store in GameRoom (room-scoped)
@@ -143,8 +143,10 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
       toast.success("Commercial is now airing!");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to start commercial");
     },
   });
 
@@ -163,8 +165,10 @@ export default function Admin() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
       toast.success("Commercial stopped");
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to stop commercial");
     },
   });
 
@@ -216,6 +220,9 @@ export default function Admin() {
       queryClient.invalidateQueries();
       toast.success("Game closed");
       navigate(-1);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to close game");
     },
   });
 

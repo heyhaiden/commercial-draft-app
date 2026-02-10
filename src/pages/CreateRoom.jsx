@@ -65,20 +65,44 @@ export default function CreateRoom() {
   const createRoom = async () => {
     setCreating(true);
     try {
-      const userIdentity = await getUserIdentity(base44);
-      const code = await generateUniqueCode();
+      let userIdentity;
+      try {
+        userIdentity = await getUserIdentity(base44);
+      } catch {
+        toast.dismiss();
+        toast.error("Failed to get user identity. Please try again.");
+        setCreating(false);
+        return;
+      }
+
+      let code;
+      try {
+        code = await generateUniqueCode();
+      } catch {
+        toast.dismiss();
+        toast.error("Failed to generate unique room code. Please try again.");
+        setCreating(false);
+        return;
+      }
 
       toast.loading("Creating room...");
 
       // Create the new room (brands stay global, state is room-scoped via ratings)
-      await base44.entities.GameRoom.create({
-        room_code: code,
-        host_email: userIdentity.id,
-        status: "lobby",
-        max_players: maxPlayers,
-        round_timer: roundTimer,
-        snake_draft: snakeDraft,
-      });
+      try {
+        await base44.entities.GameRoom.create({
+          room_code: code,
+          host_email: userIdentity.id,
+          status: "lobby",
+          max_players: maxPlayers,
+          round_timer: roundTimer,
+          snake_draft: snakeDraft,
+        });
+      } catch {
+        toast.dismiss();
+        toast.error("Failed to create room. The room code may already exist.");
+        setCreating(false);
+        return;
+      }
 
       // Store room code for session-scoped queries
       setCurrentRoomCode(code);
@@ -89,9 +113,10 @@ export default function CreateRoom() {
       
       toast.dismiss();
       toast.success("✨ Fresh room created!");
-    } catch (error) {
+    } catch {
       toast.dismiss();
-      toast.error(error.message || "Failed to create room");
+      toast.error("Failed to create room");
+    } finally {
       setCreating(false);
     }
   };
@@ -162,7 +187,7 @@ export default function CreateRoom() {
                   await base44.entities.GameRoom.delete(activeRoom.id);
                   setActiveRoom(null);
                   toast.success("Game deleted");
-                } catch (error) {
+                } catch {
                   toast.error("Failed to delete game");
                 }
               }

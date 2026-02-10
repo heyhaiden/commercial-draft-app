@@ -130,19 +130,30 @@ export default function Rate() {
 
     // Update every second
     const interval = setInterval(() => {
+      // Check if showRating still exists (component might unmount or rating changed)
+      if (!showRating || !currentRoom?.air_started_at) {
+        clearInterval(interval);
+        return;
+      }
+      
       const remaining = calculateRemaining();
       setRemainingSeconds(remaining);
       
       // Auto-submit 0 rating when timer expires (only once)
+      // Check if rating already exists to prevent race condition
       if (remaining === 0 && !ratedIds.has(showRating.id) && !autoSubmittedRef.current && user) {
-        autoSubmittedRef.current = true;
-        rateMutation.mutate({ brandId: showRating.id, stars: 0 });
-        toast.info("⏱️ Time expired - submitted 0 stars");
+        // Double-check: verify rating doesn't exist before submitting
+        const existingRating = myRatings.find(r => r.brand_id === showRating.id);
+        if (!existingRating) {
+          autoSubmittedRef.current = true;
+          rateMutation.mutate({ brandId: showRating.id, stars: 0 });
+          toast.info("⏱️ Time expired - submitted 0 stars");
+        }
       }
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [currentRoom?.air_started_at, showRating?.id, ratedIds, user, currentRoom]);
+  }, [currentRoom?.air_started_at, showRating?.id, ratedIds, user, currentRoom, myRatings, showRating]);
 
   // Get players for current room only
   const { data: allPlayers = [] } = useQuery({
@@ -166,25 +177,46 @@ export default function Rate() {
     mutationFn: async (variables) => {
       const { brandId, stars } = variables;
       const brand = brands.find(b => b.id === brandId);
+      
+      // Null check for brand
+      if (!brand) {
+        toast.error("Brand not found");
+        throw new Error("Brand not found");
+      }
+      
       toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
 
       // Use scoped user ID format: "roomCode:userEmail"
       const scopedUser = `${roomCode}:${user.id}`;
 
-      await base44.entities.Rating.create({
-        user_email: scopedUser,
-        brand_id: brandId,
-        brand_name: brand?.brand_name || "",
-        stars,
-      });
+      try {
+        await base44.entities.Rating.create({
+          user_email: scopedUser,
+          brand_id: brandId,
+          brand_name: brand?.brand_name || "",
+          stars,
+        });
+      } catch (error) {
+        // Handle specific error cases
+        if (error.message?.includes("duplicate") || error.message?.includes("already exists")) {
+          toast.error("You have already rated this commercial");
+        } else if (error.message?.includes("network") || error.message?.includes("fetch")) {
+          toast.error("Network error. Please try again.");
+        } else {
+          throw error; // Re-throw to be caught by onError handler
+        }
+        return; // Exit early on handled errors
+      }
 
       // Check if all players in this room have rated
+      // Re-fetch to get latest count and avoid race condition
       const allBrandRatings = await base44.entities.Rating.filter({ brand_id: brandId });
       // Filter to only this room's ratings
       const currentRatings = allBrandRatings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
       const totalPlayers = allPlayers.length;
 
-      if (currentRatings.length + 1 >= totalPlayers && currentRoom) {
+      // Use >= instead of +1 to avoid off-by-one, and check if already stopped
+      if (currentRatings.length >= totalPlayers && currentRoom && currentRoom.current_airing_brand_id === brandId) {
         // All players have rated - stop airing in this room
         await base44.entities.GameRoom.update(currentRoom.id, {
           current_airing_brand_id: null,

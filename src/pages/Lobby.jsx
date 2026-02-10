@@ -128,12 +128,20 @@ export default function Lobby() {
       const nonHostPlayers = players.filter(p => p.user_email !== room.host_email);
       const shuffled = shuffleArray(nonHostPlayers);
 
-      // Update all turn orders atomically
-      await Promise.all(
-        shuffled.map((player, i) =>
-          base44.entities.Player.update(player.id, { turn_order: i })
-        )
-      );
+      // Update all turn orders atomically with error handling
+      try {
+        await Promise.all(
+          shuffled.map((player, i) =>
+            base44.entities.Player.update(player.id, { turn_order: i }).catch((error) => {
+              console.error(`Failed to update player ${player.id}:`, error);
+              // Continue with other updates even if one fails
+            })
+          )
+        );
+      } catch (error) {
+        console.error("Error updating player turn orders:", error);
+        throw error;
+      }
 
       const startTime = new Date(Date.now() + 15000).toISOString();
       await base44.entities.GameRoom.update(room.id, {
@@ -145,6 +153,9 @@ export default function Lobby() {
     onSuccess: () => {
       toast.success("Draft starting in 15 seconds!");
       queryClient.invalidateQueries({ queryKey: ["room"] });
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to start draft");
     },
   });
 
