@@ -9,12 +9,13 @@ export default function Leaderboard() {
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
-  const currentRoomCode = getCurrentRoomCode();
+  const [currentRoomCode, setCurrentRoomCode] = useState(null);
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
+    setCurrentRoomCode(getCurrentRoomCode());
   }, []);
 
   const { data: brands = [] } = useQuery({
