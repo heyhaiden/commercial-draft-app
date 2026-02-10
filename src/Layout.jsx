@@ -20,6 +20,7 @@ export default function Layout({ children, currentPageName }) {
         ::-webkit-scrollbar-thumb { background: rgba(244,197,66,0.3); border-radius: 3px; }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
       `}</style>
+      <GlobalRatingModal />
       {children}
       {showNav && <MobileNav />}
     </div>
