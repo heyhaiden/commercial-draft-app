@@ -21,12 +21,33 @@ export default function MyDraft() {
   }, []);
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser).catch((error) => {
-      // Silently handle errors - getUserIdentity already handles fallback
-      // Don't log 401/403 errors as they're expected for guest users
-      if (error?.status !== 401 && error?.status !== 403) {
-        console.error('Failed to get user identity:', error);
+    // Check session storage first to avoid unnecessary auth calls
+    const cached = sessionStorage.getItem('currentUser');
+    if (cached) {
+      try {
+        const cachedUser = JSON.parse(cached);
+        setUser(cachedUser);
+        // If it's a guest user, skip auth check to prevent 401 errors
+        if (cachedUser.isGuest) {
+          return;
+        }
+      } catch {
+        // If parsing fails, continue to auth check
       }
+    }
+    
+    // Only check auth if we don't have a cached guest user
+    getUserIdentity(base44, false).then(setUser).catch(() => {
+      // Fallback: create guest user from localStorage
+      const guestId = localStorage.getItem('guestId') || `guest_${Math.random().toString(36).substring(2, 15)}`;
+      if (!localStorage.getItem('guestId')) {
+        localStorage.setItem('guestId', guestId);
+      }
+      setUser({
+        id: guestId,
+        name: localStorage.getItem('guestName') || 'Guest',
+        isGuest: true
+      });
     });
   }, []);
   
@@ -43,6 +64,22 @@ export default function MyDraft() {
   });
   const currentRoom = rooms[0];
 
+  // Get current player to get stable user_email (set during profile setup)
+  const { data: players = [] } = useQuery({
+    queryKey: ["players", roomCode],
+    queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
+  });
+  
+  // Find the current user's player entity - this has the stable user_email
+  // The Player entity is created during ProfileSetup with user_email = userIdentity.id
+  // This is the stable identifier we use to match picks
+  const myPlayer = useMemo(() => {
+    if (!user?.id || !players.length) return null;
+    // Match by user.id (which is the guest ID or email set during profile creation)
+    return players.find(p => p.user_email === user.id);
+  }, [players, user?.id]);
+
   // Get all room-scoped ratings
   const { data: allRoomRatings = [] } = useQuery({
     queryKey: ["allRoomRatings", roomCode],
@@ -55,22 +92,25 @@ export default function MyDraft() {
   });
 
   // Use RoomDraftPick scoped to current room
+  // Use myPlayer's user_email (set during profile setup) as the stable identifier
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
-    queryKey: ["myPicks", user?.id, roomCode],
+    queryKey: ["myPicks", myPlayer?.user_email, roomCode],
     queryFn: async () => {
-      if (!user?.id || !roomCode) return [];
-      // Fetch all picks for this room and filter client-side to handle guest IDs
+      // Must have a player entity (created during profile setup) to match picks
+      if (!myPlayer?.user_email || !roomCode) {
+        return [];
+      }
+      
+      // Fetch all picks for this room
       const allRoomPicks = await base44.entities.RoomDraftPick.filter({ room_code: roomCode });
-      // Filter picks by user email - handle both exact match and potential variations
-      const filtered = allRoomPicks.filter(pick => {
-        // Exact match
-        if (pick.user_email === user.id) return true;
-        // Also check if user.id might be in a different format
-        return pick.user_email?.includes(user.id) || user.id?.includes(pick.user_email);
-      });
+      
+      // Filter picks by the player's user_email (set during profile setup)
+      // This is the stable identifier that matches what was used when creating picks
+      const filtered = allRoomPicks.filter(pick => pick.user_email === myPlayer.user_email);
+      
       return filtered;
     },
-    enabled: !!user?.id && !!roomCode,
+    enabled: !!myPlayer?.user_email && !!roomCode,
   });
 
   // Show onboarding after draft is complete (when user has picks)
@@ -116,13 +156,19 @@ export default function MyDraft() {
 
   // Real-time sync for draft picks (room-scoped)
   useEffect(() => {
-    if (!roomCode) return;
+    if (!roomCode || !myPlayer?.user_email) return;
     const unsubscribe = base44.entities.RoomDraftPick.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["myPicks", user?.id, roomCode] });
+      queryClient.invalidateQueries({ queryKey: ["myPicks", myPlayer.user_email, roomCode] });
       queryClient.invalidateQueries({ queryKey: ["allPicks", roomCode] });
     });
-    return unsubscribe;
-  }, [queryClient, roomCode, user?.id]);
+    const unsubscribePlayers = base44.entities.Player.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["players", roomCode] });
+    });
+    return () => {
+      unsubscribe();
+      unsubscribePlayers();
+    };
+  }, [queryClient, roomCode, myPlayer?.user_email]);
 
   // Memoize rank calculation for performance using room-scoped brand states
   const myRank = useMemo(() => {

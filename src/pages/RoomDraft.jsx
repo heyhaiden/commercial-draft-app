@@ -87,6 +87,12 @@ export default function RoomDraft() {
 
   const room = rooms[0];
   const isHost = user && room && user.id === room.host_email;
+  
+  // Find the current user's player entity - this has the stable user_email set during profile setup
+  const myPlayer = useMemo(() => {
+    if (!user?.id || !players.length) return null;
+    return players.find(p => p.user_email === user.id);
+  }, [players, user?.id]);
 
   // Memoize expensive calculations
   const sortedPlayers = useMemo(() => {
@@ -182,7 +188,7 @@ export default function RoomDraft() {
   const lockPickMutation = useMutation({
     mutationFn: async (brand = null) => {
       const brandToPick = brand ?? selectedBrand;
-      if (!brandToPick) return;
+      if (!brandToPick || !myPlayer) return;
       
       // Visual feedback animation
       toast.success(`🎯 ${brandToPick.brand_name} locked in!`);
@@ -190,9 +196,10 @@ export default function RoomDraft() {
       const pickNumber = roomPicks.length + 1;
       const currentRound = Math.floor(pickNumber / sortedPlayers.length) + 1;
 
+      // Use myPlayer.user_email (set during profile setup) as the stable identifier
       await base44.entities.RoomDraftPick.create({
         room_code: roomCode,
-        user_email: user.id,
+        user_email: myPlayer.user_email,
         brand_id: brandToPick.id,
         brand_name: brandToPick.brand_name,
         category: brandToPick.category,
