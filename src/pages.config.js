@@ -47,13 +47,13 @@
  *
  * The mainPage value must match a key in the PAGES object exactly.
  */
-import Admin from './pages/Admin';
-import CreateRoom from './pages/CreateRoom';
 import JoinGame from './pages/JoinGame';
-import Leaderboard from './pages/Leaderboard';
-import Lobby from './pages/Lobby';
-import MyDraft from './pages/MyDraft';
 import ProfileSetup from './pages/ProfileSetup';
+import Leaderboard from './pages/Leaderboard';
+import MyDraft from './pages/MyDraft';
+import CreateRoom from './pages/CreateRoom';
+import Lobby from './pages/Lobby';
+import Admin from './pages/Admin';
 import Rate from './pages/Rate';
 import RoomDraft from './pages/RoomDraft';
 import Home from './pages/Home';
@@ -61,13 +61,13 @@ import __Layout from './Layout.jsx';
 
 
 export const PAGES = {
-    "Admin": Admin,
-    "CreateRoom": CreateRoom,
     "JoinGame": JoinGame,
-    "Leaderboard": Leaderboard,
-    "Lobby": Lobby,
-    "MyDraft": MyDraft,
     "ProfileSetup": ProfileSetup,
+    "Leaderboard": Leaderboard,
+    "MyDraft": MyDraft,
+    "CreateRoom": CreateRoom,
+    "Lobby": Lobby,
+    "Admin": Admin,
     "Rate": Rate,
     "RoomDraft": RoomDraft,
     "Home": Home,

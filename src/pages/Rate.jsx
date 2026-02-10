@@ -6,6 +6,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 
 export default function Rate() {
   const [showRulesPopup, setShowRulesPopup] = useState(false);
@@ -14,6 +16,7 @@ export default function Rate() {
   const [selectedStars, setSelectedStars] = useState(0);
   const queryClient = useQueryClient();
   const roomCode = getCurrentRoomCode();
+  const navigate = useNavigate();
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
@@ -44,16 +47,16 @@ export default function Rate() {
     return unsubscribe;
   }, [queryClient]);
 
-  // Auto-show popup when brand starts airing and navigate to Rate tab
+  // Auto-show popup when brand starts airing and navigate to Rate page
   useEffect(() => {
     if (airingBrand && !ratedIds.has(airingBrand.id) && !showRating) {
       setShowRating(airingBrand);
       setSelectedStars(0);
       setRatingTimer(120); // 2 minutes
-      // Navigate to Rate tab
-      window.location.hash = '#/Rate';
+      // Navigate to Rate page
+      navigate(createPageUrl("Rate"));
     }
-  }, [airingBrand?.id]);
+  }, [airingBrand?.id, navigate]);
 
 
 

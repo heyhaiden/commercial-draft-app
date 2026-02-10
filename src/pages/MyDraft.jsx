@@ -136,7 +136,10 @@ export default function MyDraft() {
 
         {/* Categories */}
         {categories.map(category => {
-          const catPicks = myPicks.filter(p => p.category === category);
+          const catPicks = myPicks.filter(p => {
+            const brand = brands.find(b => b.id === p.brand_id);
+            return brand?.category === category;
+          });
           if (catPicks.length === 0) return null;
 
           return (
