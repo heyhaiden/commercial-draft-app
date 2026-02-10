@@ -1,6 +1,6 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
-import { createPageUrl } from "@/components/utils";
+import { createPageUrl } from "@/utils";
 import { ClipboardList, ThumbsUp, Trophy } from "lucide-react";
 import { cn } from "@/lib/utils";
 

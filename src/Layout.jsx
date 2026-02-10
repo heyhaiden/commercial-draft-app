@@ -1,6 +1,5 @@
 import React from "react";
 import MobileNav from "@/components/common/MobileNav";
-import GlobalAdListener from "@/components/common/GlobalAdListener";
 
 export default function Layout({ children, currentPageName }) {
   // No nav on these pages
@@ -20,7 +19,6 @@ export default function Layout({ children, currentPageName }) {
         ::-webkit-scrollbar-thumb { background: rgba(244,197,66,0.3); border-radius: 3px; }
         .safe-area-bottom { padding-bottom: env(safe-area-inset-bottom); }
       `}</style>
-      <GlobalAdListener />
       {children}
       {showNav && <MobileNav />}
     </div>

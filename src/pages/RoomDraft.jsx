@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/components/utils";
+import { createPageUrl } from "@/utils";
 import { getUserIdentity } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle, Lock } from "lucide-react";
@@ -26,13 +26,7 @@ export default function RoomDraft() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser).catch((error) => {
-      // Silently handle errors - getUserIdentity already handles fallback
-      // Don't log 401/403 errors as they're expected for guest users
-      if (error?.status !== 401 && error?.status !== 403) {
-        console.error('Failed to get user identity:', error);
-      }
-    });
+    getUserIdentity(base44).then(setUser);
   }, []);
 
   const { data: rooms = [] } = useQuery({
@@ -87,12 +81,6 @@ export default function RoomDraft() {
 
   const room = rooms[0];
   const isHost = user && room && user.id === room.host_email;
-  
-  // Find the current user's player entity - this has the stable user_email set during profile setup
-  const myPlayer = useMemo(() => {
-    if (!user?.id || !players.length) return null;
-    return players.find(p => p.user_email === user.id);
-  }, [players, user?.id]);
 
   // Memoize expensive calculations
   const sortedPlayers = useMemo(() => {
@@ -107,11 +95,10 @@ export default function RoomDraft() {
   ), [roomPicks, user?.id]);
 
   const filteredBrands = useMemo(() => {
-    // Show all brands (including picked ones, greyed out) when no filter
-    if (searchTerm === "" || searchTerm === "All Brands") return brands;
-    // Filter by category
-    return brands.filter(b => b.category === searchTerm);
-  }, [brands, searchTerm]);
+    const available = brands.filter(b => !pickedBrandIds.has(b.id));
+    if (searchTerm === "" || searchTerm === "All Brands") return available;
+    return available.filter(b => b.category === searchTerm);
+  }, [brands, pickedBrandIds, searchTerm]);
 
   // Calculate current turn
   const [timeRemaining, setTimeRemaining] = useState(null);
@@ -188,7 +175,7 @@ export default function RoomDraft() {
   const lockPickMutation = useMutation({
     mutationFn: async (brand = null) => {
       const brandToPick = brand ?? selectedBrand;
-      if (!brandToPick || !myPlayer) return;
+      if (!brandToPick) return;
       
       // Visual feedback animation
       toast.success(`🎯 ${brandToPick.brand_name} locked in!`);
@@ -196,15 +183,22 @@ export default function RoomDraft() {
       const pickNumber = roomPicks.length + 1;
       const currentRound = Math.floor(pickNumber / sortedPlayers.length) + 1;
 
-      // Use myPlayer.user_email (set during profile setup) as the stable identifier
       await base44.entities.RoomDraftPick.create({
         room_code: roomCode,
-        user_email: myPlayer.user_email,
+        user_email: user.id,
+        brand_id: brandToPick.id,
+        brand_name: brandToPick.brand_name,
+        pick_number: pickNumber,
+        round: currentRound,
+      });
+
+      await base44.entities.DraftPick.create({
+        user_email: user.id,
+        user_name: user.name,
         brand_id: brandToPick.id,
         brand_name: brandToPick.brand_name,
         category: brandToPick.category,
-        pick_number: pickNumber,
-        round: currentRound,
+        locked: true,
       });
 
       // Update turn timer
@@ -398,12 +392,15 @@ export default function RoomDraft() {
 
         {/* Brands List */}
         <div className="p-4 space-y-2 pb-24">
-          {filteredBrands.map(brand => {
+          {brands.map(brand => {
             const isSelected = selectedBrand?.id === brand.id;
             const isPicked = pickedBrandIds.has(brand.id);
             const isMine = myPickedBrandIds.has(brand.id);
             const pickedByPlayer = roomPicks.find(p => p.brand_id === brand.id);
             const pickedPlayer = pickedByPlayer ? players.find(p => p.user_email === pickedByPlayer.user_email) : null;
+            const showBrand = !isPicked || searchTerm === "" || brand.category === searchTerm;
+
+            if (!showBrand) return null;
 
             return (
               <motion.button

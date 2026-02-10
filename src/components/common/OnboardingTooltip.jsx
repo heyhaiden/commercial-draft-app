@@ -52,7 +52,6 @@ export default function OnboardingTooltip({ show, onComplete }) {
 
   const handleComplete = () => {
     localStorage.setItem("hasSeenOnboarding", "true");
-    localStorage.setItem("hasSeenPostDraftOnboarding", "true");
     onComplete?.();
   };
 

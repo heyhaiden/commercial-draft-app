@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/components/utils";
+import { createPageUrl } from "@/utils";
 import { getUserIdentity } from "@/components/utils/guestAuth";
 import { ArrowLeft, Settings, CheckCircle, Clock, Rocket } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,12 +19,6 @@ export default function Lobby() {
   useEffect(() => {
     getUserIdentity(base44).then(identity => {
       setUser(identity);
-    }).catch((error) => {
-      // Silently handle errors - getUserIdentity already handles fallback
-      // Don't log 401/403 errors as they're expected for guest users
-      if (error?.status !== 401 && error?.status !== 403) {
-        console.error('Failed to get user identity:', error);
-      }
     });
   }, []);
 
@@ -128,20 +122,12 @@ export default function Lobby() {
       const nonHostPlayers = players.filter(p => p.user_email !== room.host_email);
       const shuffled = shuffleArray(nonHostPlayers);
 
-      // Update all turn orders atomically with error handling
-      try {
-        await Promise.all(
-          shuffled.map((player, i) =>
-            base44.entities.Player.update(player.id, { turn_order: i }).catch((error) => {
-              console.error(`Failed to update player ${player.id}:`, error);
-              // Continue with other updates even if one fails
-            })
-          )
-        );
-      } catch (error) {
-        console.error("Error updating player turn orders:", error);
-        throw error;
-      }
+      // Update all turn orders atomically
+      await Promise.all(
+        shuffled.map((player, i) =>
+          base44.entities.Player.update(player.id, { turn_order: i })
+        )
+      );
 
       const startTime = new Date(Date.now() + 15000).toISOString();
       await base44.entities.GameRoom.update(room.id, {
@@ -153,9 +139,6 @@ export default function Lobby() {
     onSuccess: () => {
       toast.success("Draft starting in 15 seconds!");
       queryClient.invalidateQueries({ queryKey: ["room"] });
-    },
-    onError: (error) => {
-      toast.error(error.message || "Failed to start draft");
     },
   });
 
@@ -181,7 +164,7 @@ export default function Lobby() {
           </button>
           <div className="text-center">
             <h1 className="text-white font-black italic text-xl">COMMERCIAL DRAFT</h1>
-            <p className="text-[#f4c542] text-xs font-medium">THE BIG GAME</p>
+            <p className="text-[#f4c542] text-xs font-medium">Super Bowl LVIII</p>
           </div>
           {isHost && (
             <button onClick={() => navigate(createPageUrl("Admin"))} className="w-12 h-12 rounded-full bg-[#4a4a3a]/40 flex items-center justify-center">

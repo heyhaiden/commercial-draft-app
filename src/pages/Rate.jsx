@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from "react";
+import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,7 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function Rate() {
   const [showRulesPopup, setShowRulesPopup] = useState(false);
@@ -15,16 +14,9 @@ export default function Rate() {
   const [selectedStars, setSelectedStars] = useState(0);
   const queryClient = useQueryClient();
   const roomCode = getCurrentRoomCode();
-  const autoSubmittedRef = useRef(false);
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser).catch((error) => {
-      // Silently handle errors - getUserIdentity already handles fallback
-      // Don't log 401/403 errors as they're expected for guest users
-      if (error?.status !== 401 && error?.status !== 403) {
-        console.error('Failed to get user identity:', error);
-      }
-    });
+    getUserIdentity(base44).then(setUser);
   }, []);
 
   const { data: brands = [] } = useQuery({
@@ -32,128 +24,48 @@ export default function Rate() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
-  // Get current room to check airing state
-  const { data: rooms = [] } = useQuery({
-    queryKey: ["room", roomCode],
-    queryFn: () => base44.entities.GameRoom.filter({ room_code: roomCode }),
-    enabled: !!roomCode,
-  });
-  const currentRoom = rooms[0];
-
-  // Get all room-scoped ratings
-  const { data: allRoomRatings = [] } = useQuery({
-    queryKey: ["allRoomRatings", roomCode],
-    queryFn: async () => {
-      const ratings = await base44.entities.Rating.list("-created_date", 500);
-      // Filter to only ratings from this room (user_email starts with roomCode:)
-      return ratings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
-    },
-    enabled: !!roomCode,
-  });
-
-  // Filter ratings by room-scoped user key
-  // Format: "roomCode:userEmail" to scope ratings per game
-  const scopedUserId = roomCode && user?.id ? `${roomCode}:${user.id}` : null;
-
+  // Filter ratings by room_code to scope to current game
   const { data: myRatings = [] } = useQuery({
-    queryKey: ["myRatings", scopedUserId],
-    queryFn: () => base44.entities.Rating.filter({ user_email: scopedUserId }),
-    enabled: !!scopedUserId,
+    queryKey: ["myRatings", user?.id, roomCode],
+    queryFn: () => base44.entities.Rating.filter({ user_email: user.id, room_code: roomCode }),
+    enabled: !!user && !!roomCode,
   });
 
-  // Calculate room-scoped brand states
-  const roomBrandStates = useMemo(() => {
-    if (!roomCode || !currentRoom) return brands;
-    return getRoomBrandStates(brands, allRoomRatings, roomCode, currentRoom);
-  }, [brands, allRoomRatings, roomCode, currentRoom]);
-
-  const airingBrand = roomBrandStates.find(b => b.is_airing);
+  const airingBrand = brands.find(b => b.is_airing);
   const ratedIds = new Set(myRatings.map(r => r.brand_id));
 
-  const [remainingSeconds, setRemainingSeconds] = useState(null);
+  const [ratingTimer, setRatingTimer] = useState(null);
 
-  // Real-time sync for room and brand updates
+  // Real-time sync for brand updates (airing status, ratings)
   useEffect(() => {
-    if (!roomCode) return;
-    const unsubscribeRoom = base44.entities.GameRoom.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
-    });
-    const unsubscribeBrands = base44.entities.Brand.subscribe(() => {
+    const unsubscribe = base44.entities.Brand.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
-    const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", roomCode] });
-      if (scopedUserId) {
-        queryClient.invalidateQueries({ queryKey: ["myRatings", scopedUserId] });
-      }
-    });
-    return () => {
-      unsubscribeRoom();
-      unsubscribeBrands();
-      unsubscribeRatings();
-    };
-  }, [queryClient, roomCode]);
+    return unsubscribe;
+  }, [queryClient]);
 
-  // Auto-show popup when brand starts airing
+  // Auto-show popup when brand starts airing and navigate to Rate tab
   useEffect(() => {
     if (airingBrand && !ratedIds.has(airingBrand.id) && !showRating) {
       setShowRating(airingBrand);
       setSelectedStars(0);
-      autoSubmittedRef.current = false; // Reset auto-submit flag for new brand
+      setRatingTimer(120); // 2 minutes
+      // Navigate to Rate tab
+      window.location.hash = '#/Rate';
     }
-    // Close popup if user has rated or brand stopped airing
-    if (showRating && (ratedIds.has(showRating.id) || !airingBrand || airingBrand.id !== showRating.id)) {
-      setShowRating(null);
-      setSelectedStars(0);
-      setRemainingSeconds(null);
-      autoSubmittedRef.current = false;
-    }
-  }, [airingBrand?.id, ratedIds, showRating]);
+  }, [airingBrand?.id]);
 
-  // Calculate synced timer based on room's air_started_at (2 minutes = 120 seconds)
+
+
+  // Rating countdown timer
   useEffect(() => {
-    if (!showRating || !currentRoom?.air_started_at || ratedIds.has(showRating.id)) {
-      setRemainingSeconds(null);
-      return;
+    if (ratingTimer !== null && ratingTimer > 0 && showRating) {
+      const interval = setInterval(() => {
+        setRatingTimer(prev => Math.max(0, prev - 1));
+      }, 1000);
+      return () => clearInterval(interval);
     }
-
-    const calculateRemaining = () => {
-      const startTime = new Date(currentRoom.air_started_at).getTime();
-      const now = Date.now();
-      const elapsed = Math.floor((now - startTime) / 1000);
-      const remaining = Math.max(0, 120 - elapsed); // 2 minutes = 120 seconds
-      return remaining;
-    };
-
-    // Calculate immediately
-    setRemainingSeconds(calculateRemaining());
-
-    // Update every second
-    const interval = setInterval(() => {
-      // Check if showRating still exists (component might unmount or rating changed)
-      if (!showRating || !currentRoom?.air_started_at) {
-        clearInterval(interval);
-        return;
-      }
-      
-      const remaining = calculateRemaining();
-      setRemainingSeconds(remaining);
-      
-      // Auto-submit 0 rating when timer expires (only once)
-      // Check if rating already exists to prevent race condition
-      if (remaining === 0 && !ratedIds.has(showRating.id) && !autoSubmittedRef.current && user) {
-        // Double-check: verify rating doesn't exist before submitting
-        const existingRating = myRatings.find(r => r.brand_id === showRating.id);
-        if (!existingRating) {
-          autoSubmittedRef.current = true;
-          rateMutation.mutate({ brandId: showRating.id, stars: 0 });
-          toast.info("⏱️ Time expired - submitted 0 stars");
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [currentRoom?.air_started_at, showRating?.id, ratedIds, user, currentRoom, myRatings, showRating]);
+  }, [ratingTimer, showRating]);
 
   // Get players for current room only
   const { data: allPlayers = [] } = useQuery({
@@ -162,14 +74,10 @@ export default function Rate() {
     enabled: !!roomCode,
   });
 
-  // Get all ratings for brand, then filter client-side by room prefix
+  // Get ratings for brand in current room
   const { data: allRatingsForBrand = [] } = useQuery({
     queryKey: ["allRatingsForBrand", showRating?.id, roomCode],
-    queryFn: async () => {
-      const ratings = await base44.entities.Rating.filter({ brand_id: showRating.id });
-      // Filter to only ratings from this room (user_email starts with roomCode:)
-      return ratings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
-    },
+    queryFn: () => base44.entities.Rating.filter({ brand_id: showRating.id, room_code: roomCode }),
     enabled: !!showRating && !!roomCode,
   });
 
@@ -177,65 +85,47 @@ export default function Rate() {
     mutationFn: async (variables) => {
       const { brandId, stars } = variables;
       const brand = brands.find(b => b.id === brandId);
-      
-      // Null check for brand
-      if (!brand) {
-        toast.error("Brand not found");
-        throw new Error("Brand not found");
-      }
-      
       toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
 
-      // Use scoped user ID format: "roomCode:userEmail"
-      const scopedUser = `${roomCode}:${user.id}`;
-
-      try {
-        await base44.entities.Rating.create({
-          user_email: scopedUser,
-          brand_id: brandId,
-          brand_name: brand?.brand_name || "",
-          stars,
-        });
-      } catch (error) {
-        // Handle specific error cases
-        if (error.message?.includes("duplicate") || error.message?.includes("already exists")) {
-          toast.error("You have already rated this commercial");
-        } else if (error.message?.includes("network") || error.message?.includes("fetch")) {
-          toast.error("Network error. Please try again.");
-        } else {
-          throw error; // Re-throw to be caught by onError handler
-        }
-        return; // Exit early on handled errors
-      }
+      // Include room_code to scope rating to current game
+      await base44.entities.Rating.create({
+        user_email: user.id,
+        brand_id: brandId,
+        brand_name: brand?.brand_name || "",
+        room_code: roomCode,
+        stars,
+      });
 
       // Check if all players in this room have rated
-      // Re-fetch to get latest count and avoid race condition
-      const allBrandRatings = await base44.entities.Rating.filter({ brand_id: brandId });
-      // Filter to only this room's ratings
-      const currentRatings = allBrandRatings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
+      const currentRatings = await base44.entities.Rating.filter({
+        brand_id: brandId,
+        room_code: roomCode
+      });
       const totalPlayers = allPlayers.length;
 
-      // Use >= instead of +1 to avoid off-by-one, and check if already stopped
-      if (currentRatings.length >= totalPlayers && currentRoom && currentRoom.current_airing_brand_id === brandId) {
-        // All players have rated - stop airing in this room
-        await base44.entities.GameRoom.update(currentRoom.id, {
-          current_airing_brand_id: null,
-          air_started_at: null,
+      if (currentRatings.length + 1 >= totalPlayers) {
+        // All players have rated - calculate final score and stop airing
+        const allStars = [...currentRatings.map(r => r.stars), stars];
+        const finalAvg = allStars.reduce((sum, s) => sum + s, 0) / allStars.length;
+        const finalPoints = Math.round(finalAvg * 20) - 10;
+
+        await base44.entities.Brand.update(brandId, {
+          is_airing: false,
+          aired: true,
+          average_rating: Math.round(finalAvg * 100) / 100,
+          total_ratings: allStars.length,
+          points: finalPoints,
         });
         toast.success("All players rated! Ad complete.");
       }
     },
     onSuccess: () => {
-      if (scopedUserId) {
-        queryClient.invalidateQueries({ queryKey: ["myRatings", scopedUserId] });
-      }
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand", showRating?.id, roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
+      queryClient.invalidateQueries({ queryKey: ["myRatings"] });
+      queryClient.invalidateQueries({ queryKey: ["brands"] });
+      queryClient.invalidateQueries({ queryKey: ["allRatingsForBrand"] });
       setShowRating(null);
       setSelectedStars(0);
-      setRemainingSeconds(null);
-      autoSubmittedRef.current = false;
+      setRatingTimer(null);
     },
   });
 
@@ -281,7 +171,7 @@ export default function Rate() {
           </div>
         )}
 
-        {roomBrandStates.filter(b => b.aired).length === 0 && !airingBrand && (
+        {brands.filter(b => b.aired).length === 0 && !airingBrand && (
           <div className="text-center py-12">
             <div className="w-20 h-20 rounded-full bg-[#4a4a3a]/20 flex items-center justify-center mx-auto mb-4">
               <span className="text-4xl">📺</span>
@@ -292,7 +182,7 @@ export default function Rate() {
         )}
 
         <div className="space-y-2">
-          {roomBrandStates.filter(b => b.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0)).map(brand => {
+          {brands.filter(b => b.aired).sort((a, b) => (b.average_rating || 0) - (a.average_rating || 0)).map(brand => {
             const hasRated = ratedIds.has(brand.id);
             return (
               <div
@@ -390,8 +280,8 @@ export default function Rate() {
 
                 <div className="mt-4 text-center">
                   <p className="text-[#a4a498] text-xs">TIME REMAINING</p>
-                  <p className={`text-lg font-bold ${remainingSeconds !== null && remainingSeconds <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
-                    {remainingSeconds !== null ? `${Math.floor(remainingSeconds / 60)}:${String(remainingSeconds % 60).padStart(2, '0')}` : '2:00'}
+                  <p className={`text-lg font-bold ${ratingTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
+                    {ratingTimer !== null ? `${Math.floor(ratingTimer / 60)}:${String(ratingTimer % 60).padStart(2, '0')}` : '2:00'}
                   </p>
                 </div>
               </div>
@@ -400,7 +290,7 @@ export default function Rate() {
                 <button
                   onClick={() => {
                     setShowRating(null);
-                    setRemainingSeconds(null);
+                    setRatingTimer(null);
                   }}
                   className="absolute top-4 right-4 w-10 h-10 rounded-full bg-[#2d2d1e]/80 flex items-center justify-center"
                 >

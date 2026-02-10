@@ -5,14 +5,11 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
 import OnboardingTooltip from "@/components/common/OnboardingTooltip";
 import { motion } from "framer-motion";
-import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function MyDraft() {
-  const queryClient = useQueryClient();
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [failedImages, setFailedImages] = useState(new Set());
-  // Initialize roomCode immediately from sessionStorage to avoid uninitialized variable errors
   const roomCode = getCurrentRoomCode();
 
   // Safe image error handler - no XSS
@@ -21,107 +18,27 @@ export default function MyDraft() {
   }, []);
 
   useEffect(() => {
-    // Check session storage first to avoid unnecessary auth calls
-    const cached = sessionStorage.getItem('currentUser');
-    if (cached) {
-      try {
-        const cachedUser = JSON.parse(cached);
-        setUser(cachedUser);
-        // If it's a guest user, skip auth check to prevent 401 errors
-        if (cachedUser.isGuest) {
-          return;
-        }
-      } catch {
-        // If parsing fails, continue to auth check
-      }
+    getUserIdentity(base44).then(setUser);
+    const hasSeenOnboarding = localStorage.getItem("hasSeenOnboarding");
+    if (!hasSeenOnboarding) {
+      setShowOnboarding(true);
     }
-    
-    // Only check auth if we don't have a cached guest user
-    getUserIdentity(base44, false).then(setUser).catch(() => {
-      // Fallback: create guest user from localStorage
-      const guestId = localStorage.getItem('guestId') || `guest_${Math.random().toString(36).substring(2, 15)}`;
-      if (!localStorage.getItem('guestId')) {
-        localStorage.setItem('guestId', guestId);
-      }
-      setUser({
-        id: guestId,
-        name: localStorage.getItem('guestName') || 'Guest',
-        isGuest: true
-      });
-    });
   }, []);
-  
+
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
   });
 
-  // Get current room
-  const { data: rooms = [] } = useQuery({
-    queryKey: ["room", roomCode],
-    queryFn: () => base44.entities.GameRoom.filter({ room_code: roomCode }),
-    enabled: !!roomCode,
-  });
-  const currentRoom = rooms[0];
-
-  // Get current player to get stable user_email (set during profile setup)
-  const { data: players = [] } = useQuery({
-    queryKey: ["players", roomCode],
-    queryFn: () => base44.entities.Player.filter({ room_code: roomCode }),
-    enabled: !!roomCode,
-  });
-  
-  // Find the current user's player entity - this has the stable user_email
-  // The Player entity is created during ProfileSetup with user_email = userIdentity.id
-  // This is the stable identifier we use to match picks
-  const myPlayer = useMemo(() => {
-    if (!user?.id || !players.length) return null;
-    // Match by user.id (which is the guest ID or email set during profile creation)
-    return players.find(p => p.user_email === user.id);
-  }, [players, user?.id]);
-
-  // Get all room-scoped ratings
-  const { data: allRoomRatings = [] } = useQuery({
-    queryKey: ["allRoomRatings", roomCode],
-    queryFn: async () => {
-      const ratings = await base44.entities.Rating.list("-created_date", 500);
-      // Filter to only ratings from this room (user_email starts with roomCode:)
-      return ratings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
-    },
-    enabled: !!roomCode,
-  });
-
   // Use RoomDraftPick scoped to current room
-  // Use myPlayer's user_email (set during profile setup) as the stable identifier
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
-    queryKey: ["myPicks", myPlayer?.user_email, roomCode],
-    queryFn: async () => {
-      // Must have a player entity (created during profile setup) to match picks
-      if (!myPlayer?.user_email || !roomCode) {
-        return [];
-      }
-      
-      // Fetch all picks for this room
-      const allRoomPicks = await base44.entities.RoomDraftPick.filter({ room_code: roomCode });
-      
-      // Filter picks by the player's user_email (set during profile setup)
-      // This is the stable identifier that matches what was used when creating picks
-      const filtered = allRoomPicks.filter(pick => pick.user_email === myPlayer.user_email);
-      
-      return filtered;
-    },
-    enabled: !!myPlayer?.user_email && !!roomCode,
+    queryKey: ["myPicks", user?.id, roomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({
+      user_email: user.id,
+      room_code: roomCode
+    }),
+    enabled: !!user && !!roomCode,
   });
-
-  // Show onboarding after draft is complete (when user has picks)
-  useEffect(() => {
-    if (myPicks.length > 0 && !picksLoading) {
-      const hasSeenPostDraftOnboarding = localStorage.getItem("hasSeenPostDraftOnboarding");
-      if (!hasSeenPostDraftOnboarding) {
-        setShowOnboarding(true);
-      }
-    }
-  }, [myPicks.length, picksLoading]);
 
   const { data: allPicks = [] } = useQuery({
     queryKey: ["allPicks", roomCode],
@@ -129,51 +46,29 @@ export default function MyDraft() {
     enabled: !!roomCode,
   });
 
-  // Calculate room-scoped brand states
-  const roomBrandStates = useMemo(() => {
-    if (!roomCode || !currentRoom) return brands;
-    return getRoomBrandStates(brands, allRoomRatings, roomCode, currentRoom);
-  }, [brands, allRoomRatings, roomCode, currentRoom]);
+  const queryClient = useQueryClient();
 
-  // Real-time sync for room, brand, and rating updates
+  // Real-time sync for brand updates
   useEffect(() => {
-    if (!roomCode) return;
-    const unsubscribeRoom = base44.entities.GameRoom.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["room", roomCode] });
-    });
-    const unsubscribeBrands = base44.entities.Brand.subscribe(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
-    const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", roomCode] });
-    });
-    return () => {
-      unsubscribeRoom();
-      unsubscribeBrands();
-      unsubscribeRatings();
-    };
-  }, [queryClient, roomCode]);
+    return unsubscribe;
+  }, [queryClient]);
 
   // Real-time sync for draft picks (room-scoped)
   useEffect(() => {
-    if (!roomCode || !myPlayer?.user_email) return;
     const unsubscribe = base44.entities.RoomDraftPick.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["myPicks", myPlayer.user_email, roomCode] });
-      queryClient.invalidateQueries({ queryKey: ["allPicks", roomCode] });
+      queryClient.invalidateQueries({ queryKey: ["myPicks"] });
+      queryClient.invalidateQueries({ queryKey: ["allPicks"] });
     });
-    const unsubscribePlayers = base44.entities.Player.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["players", roomCode] });
-    });
-    return () => {
-      unsubscribe();
-      unsubscribePlayers();
-    };
-  }, [queryClient, roomCode, myPlayer?.user_email]);
+    return unsubscribe;
+  }, [queryClient]);
 
-  // Memoize rank calculation for performance using room-scoped brand states
+  // Memoize rank calculation for performance
   const myRank = useMemo(() => {
     // Create brand lookup map for O(1) access
-    const brandMap = new Map(roomBrandStates.map(b => [b.id, b]));
+    const brandMap = new Map(brands.map(b => [b.id, b]));
 
     const userScores = {};
     allPicks.forEach(pick => {
@@ -184,7 +79,7 @@ export default function MyDraft() {
 
     const sortedUsers = Object.entries(userScores).sort((a, b) => b[1] - a[1]);
     return sortedUsers.findIndex(([email]) => email === user?.id) + 1;
-  }, [allPicks, roomBrandStates, user?.id]);
+  }, [allPicks, brands, user?.id]);
 
   const categories = ["Tech", "Auto", "Food & Beverage", "Entertainment", "Other"];
 
@@ -222,7 +117,7 @@ export default function MyDraft() {
             <div className="text-right">
               <p className="text-[#a4a498] text-xs">Current Rank</p>
               <p className="text-white text-3xl font-black">
-                {roomBrandStates.filter(b => b.aired).length > 0 ? `#${myRank || "-"}` : "-"}
+                {brands.filter(b => b.aired).length > 0 ? `#${myRank || "-"}` : "-"}
               </p>
             </div>
           </div>
@@ -256,7 +151,7 @@ export default function MyDraft() {
                   Array.from({ length: 2 }).map((_, idx) => <BrandCardSkeleton key={idx} />)
                 ) : (
                   catPicks.map(pick => {
-                    const brand = roomBrandStates.find(b => b.id === pick.brand_id);
+                    const brand = brands.find(b => b.id === pick.brand_id);
                     if (!brand) return null;
 
                     const isAiring = brand.is_airing;

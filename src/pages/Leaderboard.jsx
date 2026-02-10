@@ -4,49 +4,22 @@ import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAut
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Crown } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
-import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function Leaderboard() {
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
-  // Initialize currentRoomCode immediately from sessionStorage to avoid uninitialized variable errors
   const currentRoomCode = getCurrentRoomCode();
 
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    getUserIdentity(base44).then(setUser).catch((error) => {
-      // Silently handle errors - getUserIdentity already handles fallback
-      // Don't log 401/403 errors as they're expected for guest users
-      if (error?.status !== 401 && error?.status !== 403) {
-        console.error('Failed to get user identity:', error);
-      }
-    });
+    getUserIdentity(base44).then(setUser);
   }, []);
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
-  });
-
-  // Get current room
-  const { data: rooms = [] } = useQuery({
-    queryKey: ["room", currentRoomCode],
-    queryFn: () => base44.entities.GameRoom.filter({ room_code: currentRoomCode }),
-    enabled: !!currentRoomCode,
-  });
-  const currentRoom = rooms[0];
-
-  // Get all room-scoped ratings
-  const { data: allRoomRatings = [] } = useQuery({
-    queryKey: ["allRoomRatings", currentRoomCode],
-    queryFn: async () => {
-      const ratings = await base44.entities.Rating.list("-created_date", 500);
-      // Filter to only ratings from this room (user_email starts with roomCode:)
-      return ratings.filter(r => r.user_email?.startsWith(`${currentRoomCode}:`));
-    },
-    enabled: !!currentRoomCode,
   });
 
   const { data: allRoomPicks = [] } = useQuery({
@@ -55,39 +28,21 @@ export default function Leaderboard() {
     enabled: !!currentRoomCode,
   });
 
-  // Calculate room-scoped brand states
-  const roomBrandStates = useMemo(() => {
-    if (!currentRoomCode || !currentRoom) return brands;
-    return getRoomBrandStates(brands, allRoomRatings, currentRoomCode, currentRoom);
-  }, [brands, allRoomRatings, currentRoomCode, currentRoom]);
-
-  // Real-time sync for room, brand, and rating updates
+  // Real-time sync for brand scores
   useEffect(() => {
-    if (!currentRoomCode) return;
-    const unsubscribeRoom = base44.entities.GameRoom.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["room", currentRoomCode] });
-    });
-    const unsubscribeBrands = base44.entities.Brand.subscribe(() => {
+    const unsubscribe = base44.entities.Brand.subscribe((event) => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
-    const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomRatings", currentRoomCode] });
-    });
-    return () => {
-      unsubscribeRoom();
-      unsubscribeBrands();
-      unsubscribeRatings();
-    };
-  }, [queryClient, currentRoomCode]);
+    return unsubscribe;
+  }, [queryClient]);
 
   // Real-time sync for room draft picks
   useEffect(() => {
-    if (!currentRoomCode) return;
     const unsubscribe = base44.entities.RoomDraftPick.subscribe((event) => {
-      queryClient.invalidateQueries({ queryKey: ["allRoomPicks", currentRoomCode] });
+      queryClient.invalidateQueries({ queryKey: ["allRoomPicks"] });
     });
     return unsubscribe;
-  }, [queryClient, currentRoomCode]);
+  }, [queryClient]);
 
   const { data: allPlayers = [] } = useQuery({
     queryKey: ["allPlayers", currentRoomCode],
@@ -95,14 +50,14 @@ export default function Leaderboard() {
     enabled: !!currentRoomCode,
   });
 
-  // Memoize leaderboard calculation for performance using room-scoped brand states
+  // Memoize leaderboard calculation for performance
   const { leaderboard, myRank, hasAnyRatings } = useMemo(() => {
     if (!currentRoomCode || allRoomPicks.length === 0) {
       return { leaderboard: [], myRank: 0, hasAnyRatings: false };
     }
 
-    // Create brand lookup map for O(1) access using room-scoped states
-    const brandMap = new Map(roomBrandStates.map(b => [b.id, b]));
+    // Create brand lookup map for O(1) access
+    const brandMap = new Map(brands.map(b => [b.id, b]));
 
     const userScores = {};
     allRoomPicks.forEach(pick => {
@@ -133,9 +88,9 @@ export default function Leaderboard() {
     return {
       leaderboard: sorted,
       myRank: sorted.findIndex(e => e.email === user?.id) + 1,
-      hasAnyRatings: roomBrandStates.some(b => b.aired),
+      hasAnyRatings: brands.some(b => b.aired),
     };
-  }, [allRoomPicks, roomBrandStates, user?.id, allPlayers, currentRoomCode]);
+  }, [allRoomPicks, brands, user?.id, allPlayers, currentRoomCode]);
 
   // Memoize player lookup map for O(1) access in render
   const playerMap = useMemo(() =>
@@ -143,9 +98,9 @@ export default function Leaderboard() {
     [allPlayers]
   );
 
-  // Check if all brands have been aired and rated (room-scoped)
-  const allBrandsAired = roomBrandStates.length > 0 && roomBrandStates.every(b => b.aired || b.is_airing === false);
-  const isGameComplete = allBrandsAired && roomBrandStates.filter(b => b.aired).length === roomBrandStates.length;
+  // Check if all brands have been aired and rated
+  const allBrandsAired = brands.length > 0 && brands.every(b => b.aired || b.is_airing === false);
+  const isGameComplete = allBrandsAired && brands.filter(b => b.aired).length === brands.length;
 
   useEffect(() => {
     if (isGameComplete && !hasShownScorecard) {
@@ -284,7 +239,7 @@ export default function Leaderboard() {
         show={showScorecard}
         onClose={() => setShowScorecard(false)}
         playerData={playerData}
-        brands={roomBrandStates}
+        brands={brands}
       />
     </div>
   );

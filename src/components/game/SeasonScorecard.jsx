@@ -1,105 +1,14 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Share2, Download, Check, Loader2 } from "lucide-react";
+import { X, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/components/utils";
-import html2canvas from "html2canvas";
+import { createPageUrl } from "@/utils";
 
 export default function SeasonScorecard({ show, onClose, playerData, brands }) {
   const navigate = useNavigate();
-  const cardRef = useRef(null);
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [sharing, setSharing] = useState(false);
-
-  // Generate image from the card
-  const captureCard = async () => {
-    if (!cardRef.current) return null;
-
-    const canvas = await html2canvas(cardRef.current, {
-      backgroundColor: "#1d1d0e",
-      scale: 2, // Higher quality
-      useCORS: true,
-      logging: false,
-    });
-
-    return canvas;
-  };
-
-  // Save image to device
-  const handleSave = async () => {
-    setSaving(true);
-    try {
-      const canvas = await captureCard();
-      if (!canvas) throw new Error("Could not capture card");
-
-      // Convert to blob
-      canvas.toBlob((blob) => {
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.download = `commercial-draft-${playerData.displayName}-results.png`;
-        link.href = url;
-        link.click();
-        URL.revokeObjectURL(url);
-
-        setSaved(true);
-        setTimeout(() => setSaved(false), 2000);
-      }, "image/png");
-    } catch (error) {
-      console.error("Save failed:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Share using native share API
-  const handleShare = async () => {
-    setSharing(true);
-    try {
-      const canvas = await captureCard();
-      if (!canvas) throw new Error("Could not capture card");
-
-      // Convert canvas to blob
-      const blob = await new Promise((resolve) =>
-        canvas.toBlob(resolve, "image/png")
-      );
-
-      const file = new File([blob], "commercial-draft-results.png", { type: "image/png" });
-
-      // Calculate score for share text
-      const score = brands.filter(b =>
-        playerData.picks.some(p => p.brand_id === b.id)
-      ).reduce((sum, b) => sum + (b.points || 0), 0);
-
-      // Check if Web Share API is available with files support
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: "My Commercial Draft Results!",
-          text: `I scored ${score} points in Commercial Draft! 🏈`,
-          files: [file],
-        });
-      } else if (navigator.share) {
-        // Fallback: share without file
-        await navigator.share({
-          title: "My Commercial Draft Results!",
-          text: `I scored ${score} points in Commercial Draft! 🏈`,
-        });
-      } else {
-        // No share API - fallback to download
-        handleSave();
-      }
-    } catch (error) {
-      // User cancelled or share failed
-      if (error.name !== "AbortError") {
-        console.error("Share failed:", error);
-      }
-    } finally {
-      setSharing(false);
-    }
-  };
-
+  
   useEffect(() => {
     if (show) {
       // Football confetti
@@ -157,7 +66,6 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
-            ref={cardRef}
             className="w-full max-w-md max-h-[90vh] rounded-3xl bg-gradient-to-b from-[#2d2d1e] to-[#1d1d0e] border-2 border-[#f4c542] overflow-y-auto relative"
           >
             {/* Header */}
@@ -226,41 +134,18 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               </div>
 
               {/* Share Button */}
-              <Button
-                onClick={handleShare}
-                disabled={sharing}
-                className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3 disabled:opacity-70"
-              >
-                {sharing ? (
-                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                ) : (
-                  <Share2 className="w-4 h-4 mr-2" />
-                )}
-                {sharing ? "Preparing..." : "Share Results"}
+              <Button className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3">
+                <Share2 className="w-4 h-4 mr-2" />
+                Share to Story
               </Button>
 
               <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="outline"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className={`h-11 rounded-2xl border text-white transition-all ${
-                    saved
-                      ? "bg-green-500/30 border-green-500/50 text-green-300"
-                      : "bg-[#3d3d2e] border-[#5a5a4a]/30"
-                  }`}
-                >
-                  {saving ? (
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  ) : saved ? (
-                    <Check className="w-4 h-4 mr-2" />
-                  ) : (
-                    <Download className="w-4 h-4 mr-2" />
-                  )}
-                  {saving ? "Saving..." : saved ? "Saved!" : "Save"}
+                <Button variant="outline" className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white">
+                  <Download className="w-4 h-4 mr-2" />
+                  Save
                 </Button>
-                <Button
-                  variant="outline"
+                <Button 
+                  variant="outline" 
                   className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white"
                   onClick={() => {
                     onClose();

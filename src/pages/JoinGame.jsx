@@ -1,7 +1,7 @@
 import React, { useState, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/components/utils";
+import { createPageUrl } from "@/utils";
 import { getUserIdentity, setCurrentRoomCode } from "@/components/utils/guestAuth";
 import { ArrowLeft, Bookmark, Delete } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -1,13 +1,12 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/components/utils";
+import { createPageUrl } from "@/utils";
 import { getUserIdentity, setCurrentRoomCode } from "@/components/utils/guestAuth";
-import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3, Check } from "lucide-react";
+import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateRoom() {
   const [maxPlayers, setMaxPlayers] = useState(8);
@@ -17,9 +16,7 @@ export default function CreateRoom() {
   const [creating, setCreating] = useState(false);
   const [loading, setLoading] = useState(true);
   const [activeRoom, setActiveRoom] = useState(null);
-  const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     async function checkActiveRoom() {
@@ -65,58 +62,24 @@ export default function CreateRoom() {
   const createRoom = async () => {
     setCreating(true);
     try {
-      let userIdentity;
-      try {
-        userIdentity = await getUserIdentity(base44);
-      } catch {
-        toast.dismiss();
-        toast.error("Failed to get user identity. Please try again.");
-        setCreating(false);
-        return;
-      }
+      const userIdentity = await getUserIdentity(base44);
+      const code = await generateUniqueCode();
 
-      let code;
-      try {
-        code = await generateUniqueCode();
-      } catch {
-        toast.dismiss();
-        toast.error("Failed to generate unique room code. Please try again.");
-        setCreating(false);
-        return;
-      }
-
-      toast.loading("Creating room...");
-
-      // Create the new room (brands stay global, state is room-scoped via ratings)
-      try {
-        await base44.entities.GameRoom.create({
-          room_code: code,
-          host_email: userIdentity.id,
-          status: "lobby",
-          max_players: maxPlayers,
-          round_timer: roundTimer,
-          snake_draft: snakeDraft,
-        });
-      } catch {
-        toast.dismiss();
-        toast.error("Failed to create room. The room code may already exist.");
-        setCreating(false);
-        return;
-      }
+      await base44.entities.GameRoom.create({
+        room_code: code,
+        host_email: userIdentity.id,
+        status: "lobby",
+        max_players: maxPlayers,
+        round_timer: roundTimer,
+        snake_draft: snakeDraft,
+      });
 
       // Store room code for session-scoped queries
       setCurrentRoomCode(code);
       setRoomCode(code);
-      
-      // Invalidate queries to refresh UI
-      queryClient.invalidateQueries();
-      
-      toast.dismiss();
-      toast.success("✨ Fresh room created!");
-    } catch {
-      toast.dismiss();
-      toast.error("Failed to create room");
-    } finally {
+      toast.success("Room created!");
+    } catch (error) {
+      toast.error(error.message || "Failed to create room");
       setCreating(false);
     }
   };
@@ -124,9 +87,7 @@ export default function CreateRoom() {
   const shareCode = () => {
     if (roomCode) {
       navigator.clipboard.writeText(roomCode);
-      setCopied(true);
-      toast.success("Code copied to clipboard!");
-      setTimeout(() => setCopied(false), 2000);
+      toast.success("Code copied!");
     }
   };
 
@@ -187,7 +148,7 @@ export default function CreateRoom() {
                   await base44.entities.GameRoom.delete(activeRoom.id);
                   setActiveRoom(null);
                   toast.success("Game deleted");
-                } catch {
+                } catch (error) {
                   toast.error("Failed to delete game");
                 }
               }
@@ -230,14 +191,10 @@ export default function CreateRoom() {
             </div>
             <Button
               onClick={shareCode}
-              className={`w-full h-11 rounded-2xl font-bold border flex items-center justify-center gap-2 text-sm transition-all ${
-                copied
-                  ? "bg-green-500/40 border-green-500/50 text-green-300"
-                  : "bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white border-[#6a6a5a]/30"
-              }`}
+              className="w-full h-11 rounded-2xl bg-[#5a5a4a]/40 hover:bg-[#6a6a5a]/40 text-white font-bold border border-[#6a6a5a]/30 flex items-center justify-center gap-2 text-sm"
             >
-              {copied ? <Check className="w-4 h-4" /> : <Share2 className="w-4 h-4" />}
-              {copied ? "Copied!" : "Copy Code to Share"}
+              <Share2 className="w-4 h-4" />
+              Copy Code to Share
             </Button>
           </div>
 
