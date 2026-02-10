@@ -24,11 +24,14 @@ export default function Rate() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
-  // Filter ratings by room_code to scope to current game
+  // Filter ratings by room-scoped user key
+  // Format: "roomCode:userEmail" to scope ratings per game
+  const scopedUserId = roomCode && user?.id ? `${roomCode}:${user.id}` : null;
+
   const { data: myRatings = [] } = useQuery({
-    queryKey: ["myRatings", user?.id, roomCode],
-    queryFn: () => base44.entities.Rating.filter({ user_email: user.id, room_code: roomCode }),
-    enabled: !!user && !!roomCode,
+    queryKey: ["myRatings", scopedUserId],
+    queryFn: () => base44.entities.Rating.filter({ user_email: scopedUserId }),
+    enabled: !!scopedUserId,
   });
 
   const airingBrand = brands.find(b => b.is_airing);
@@ -74,10 +77,14 @@ export default function Rate() {
     enabled: !!roomCode,
   });
 
-  // Get ratings for brand in current room
+  // Get all ratings for brand, then filter client-side by room prefix
   const { data: allRatingsForBrand = [] } = useQuery({
     queryKey: ["allRatingsForBrand", showRating?.id, roomCode],
-    queryFn: () => base44.entities.Rating.filter({ brand_id: showRating.id, room_code: roomCode }),
+    queryFn: async () => {
+      const ratings = await base44.entities.Rating.filter({ brand_id: showRating.id });
+      // Filter to only ratings from this room (user_email starts with roomCode:)
+      return ratings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
+    },
     enabled: !!showRating && !!roomCode,
   });
 
@@ -87,20 +94,20 @@ export default function Rate() {
       const brand = brands.find(b => b.id === brandId);
       toast.success(`⭐ Rated ${brand.brand_name} ${stars}/5 stars!`);
 
-      // Include room_code to scope rating to current game
+      // Use scoped user ID format: "roomCode:userEmail"
+      const scopedUser = `${roomCode}:${user.id}`;
+
       await base44.entities.Rating.create({
-        user_email: user.id,
+        user_email: scopedUser,
         brand_id: brandId,
         brand_name: brand?.brand_name || "",
-        room_code: roomCode,
         stars,
       });
 
       // Check if all players in this room have rated
-      const currentRatings = await base44.entities.Rating.filter({
-        brand_id: brandId,
-        room_code: roomCode
-      });
+      const allBrandRatings = await base44.entities.Rating.filter({ brand_id: brandId });
+      // Filter to only this room's ratings
+      const currentRatings = allBrandRatings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
       const totalPlayers = allPlayers.length;
 
       if (currentRatings.length + 1 >= totalPlayers) {

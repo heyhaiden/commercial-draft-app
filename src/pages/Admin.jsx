@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/components/utils/guestAuth";
+import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Play, Square, CheckCircle, ArrowLeft } from "lucide-react";
@@ -14,6 +14,7 @@ export default function Admin() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState("all");
   const [failedImages, setFailedImages] = useState(new Set());
+  const roomCode = getCurrentRoomCode();
 
   // Safe image error handler - no XSS
   const handleImageError = useCallback((brandId) => {
@@ -54,14 +55,22 @@ export default function Admin() {
     queryFn: () => base44.entities.GameState.list(),
   });
 
+  // Room-scoped picks
   const { data: allPicks = [] } = useQuery({
-    queryKey: ["allPicks"],
-    queryFn: () => base44.entities.DraftPick.filter({ locked: true }),
+    queryKey: ["allPicks", roomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: roomCode }),
+    enabled: !!roomCode,
   });
 
+  // Room-scoped ratings (filter by user_email prefix)
   const { data: allRatings = [] } = useQuery({
-    queryKey: ["allRatings"],
-    queryFn: () => base44.entities.Rating.list("-created_date", 500),
+    queryKey: ["allRatings", roomCode],
+    queryFn: async () => {
+      const ratings = await base44.entities.Rating.list("-created_date", 500);
+      // Filter to only ratings from this room (user_email starts with roomCode:)
+      return ratings.filter(r => r.user_email?.startsWith(`${roomCode}:`));
+    },
+    enabled: !!roomCode,
   });
 
   const gameState = gameStates[0];

@@ -188,17 +188,9 @@ export default function RoomDraft() {
         user_email: user.id,
         brand_id: brandToPick.id,
         brand_name: brandToPick.brand_name,
+        category: brandToPick.category,
         pick_number: pickNumber,
         round: currentRound,
-      });
-
-      await base44.entities.DraftPick.create({
-        user_email: user.id,
-        user_name: user.name,
-        brand_id: brandToPick.id,
-        brand_name: brandToPick.brand_name,
-        category: brandToPick.category,
-        locked: true,
       });
 
       // Update turn timer
