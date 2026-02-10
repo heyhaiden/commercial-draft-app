@@ -17,7 +17,7 @@ const slides = [
   {
     icon: Star,
     title: "Watch & Rate",
-    description: "Rate each commercial as it airs during the game. Give stars from 1-5. Your ratings power the points!"
+    description: "Rate each commercial as it airs during THE BIG GAME. Give stars from 1-5. Your ratings power the points!"
   },
   {
     icon: TrendingUp,
