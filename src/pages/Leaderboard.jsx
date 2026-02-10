@@ -4,6 +4,7 @@ import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAut
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Crown } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
+import { getRoomBrandStates } from "@/utils/brandState";
 
 export default function Leaderboard() {
   const [user, setUser] = useState(null);
@@ -23,19 +24,55 @@ export default function Leaderboard() {
     queryFn: () => base44.entities.Brand.list(),
   });
 
+  // Get current room
+  const { data: rooms = [] } = useQuery({
+    queryKey: ["room", currentRoomCode],
+    queryFn: () => base44.entities.GameRoom.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
+  });
+  const currentRoom = rooms[0];
+
+  // Get all room-scoped ratings
+  const { data: allRoomRatings = [] } = useQuery({
+    queryKey: ["allRoomRatings", currentRoomCode],
+    queryFn: async () => {
+      const ratings = await base44.entities.Rating.list("-created_date", 500);
+      // Filter to only ratings from this room (user_email starts with roomCode:)
+      return ratings.filter(r => r.user_email?.startsWith(`${currentRoomCode}:`));
+    },
+    enabled: !!currentRoomCode,
+  });
+
   const { data: allRoomPicks = [] } = useQuery({
     queryKey: ["allRoomPicks", currentRoomCode],
     queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: currentRoomCode }),
     enabled: !!currentRoomCode,
   });
 
-  // Real-time sync for brand scores
+  // Calculate room-scoped brand states
+  const roomBrandStates = useMemo(() => {
+    if (!currentRoomCode || !currentRoom) return brands;
+    return getRoomBrandStates(brands, allRoomRatings, currentRoomCode, currentRoom);
+  }, [brands, allRoomRatings, currentRoomCode, currentRoom]);
+
+  // Real-time sync for room, brand, and rating updates
   useEffect(() => {
-    const unsubscribe = base44.entities.Brand.subscribe((event) => {
+    if (!currentRoomCode) return;
+    const unsubscribeRoom = base44.entities.GameRoom.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["room", currentRoomCode] });
+    });
+    const unsubscribeBrands = base44.entities.Brand.subscribe(() => {
       queryClient.invalidateQueries({ queryKey: ["brands"] });
     });
-    return unsubscribe;
-  }, [queryClient]);
+    const unsubscribeRatings = base44.entities.Rating.subscribe(() => {
+      queryClient.invalidateQueries({ queryKey: ["allRoomRatings"] });
+    });
+    return () => {
+      unsubscribeRoom();
+      unsubscribeBrands();
+      unsubscribeRatings();
+    };
+  }, [queryClient, currentRoomCode]);
 
   // Real-time sync for room draft picks
   useEffect(() => {
@@ -51,14 +88,14 @@ export default function Leaderboard() {
     enabled: !!currentRoomCode,
   });
 
-  // Memoize leaderboard calculation for performance
+  // Memoize leaderboard calculation for performance using room-scoped brand states
   const { leaderboard, myRank, hasAnyRatings } = useMemo(() => {
     if (!currentRoomCode || allRoomPicks.length === 0) {
       return { leaderboard: [], myRank: 0, hasAnyRatings: false };
     }
 
-    // Create brand lookup map for O(1) access
-    const brandMap = new Map(brands.map(b => [b.id, b]));
+    // Create brand lookup map for O(1) access using room-scoped states
+    const brandMap = new Map(roomBrandStates.map(b => [b.id, b]));
 
     const userScores = {};
     allRoomPicks.forEach(pick => {
@@ -89,9 +126,9 @@ export default function Leaderboard() {
     return {
       leaderboard: sorted,
       myRank: sorted.findIndex(e => e.email === user?.id) + 1,
-      hasAnyRatings: brands.some(b => b.aired),
+      hasAnyRatings: roomBrandStates.some(b => b.aired),
     };
-  }, [allRoomPicks, brands, user?.id, allPlayers, currentRoomCode]);
+  }, [allRoomPicks, roomBrandStates, user?.id, allPlayers, currentRoomCode]);
 
   // Memoize player lookup map for O(1) access in render
   const playerMap = useMemo(() =>
@@ -99,9 +136,9 @@ export default function Leaderboard() {
     [allPlayers]
   );
 
-  // Check if all brands have been aired and rated
-  const allBrandsAired = brands.length > 0 && brands.every(b => b.aired || b.is_airing === false);
-  const isGameComplete = allBrandsAired && brands.filter(b => b.aired).length === brands.length;
+  // Check if all brands have been aired and rated (room-scoped)
+  const allBrandsAired = roomBrandStates.length > 0 && roomBrandStates.every(b => b.aired || b.is_airing === false);
+  const isGameComplete = allBrandsAired && roomBrandStates.filter(b => b.aired).length === roomBrandStates.length;
 
   useEffect(() => {
     if (isGameComplete && !hasShownScorecard) {
@@ -240,7 +277,7 @@ export default function Leaderboard() {
         show={showScorecard}
         onClose={() => setShowScorecard(false)}
         playerData={playerData}
-        brands={brands}
+        brands={roomBrandStates}
       />
     </div>
   );

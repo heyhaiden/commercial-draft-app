@@ -48,11 +48,21 @@ export async function getUserIdentity(base44) {
       name: user.full_name,
       isGuest: false
     };
-  } catch {
+  } catch (error) {
+    // 401/403 errors are expected for guest users - silently handle them
+    // Only log unexpected errors
+    if (error?.status !== 401 && error?.status !== 403) {
+      console.error('Unexpected auth error:', error);
+    }
+    
     // Try to restore from session storage first
     const cached = sessionStorage.getItem('currentUser');
     if (cached) {
-      return JSON.parse(cached);
+      try {
+        return JSON.parse(cached);
+      } catch {
+        // If parsing fails, continue to guest fallback
+      }
     }
     // Fallback to guest
     const guestUser = {

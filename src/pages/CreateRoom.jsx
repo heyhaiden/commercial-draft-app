@@ -7,6 +7,7 @@ import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3, Check } from "lucid
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
 
 export default function CreateRoom() {
   const [maxPlayers, setMaxPlayers] = useState(8);
@@ -18,6 +19,7 @@ export default function CreateRoom() {
   const [activeRoom, setActiveRoom] = useState(null);
   const [copied, setCopied] = useState(false);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     async function checkActiveRoom() {
@@ -66,6 +68,9 @@ export default function CreateRoom() {
       const userIdentity = await getUserIdentity(base44);
       const code = await generateUniqueCode();
 
+      toast.loading("Creating room...");
+
+      // Create the new room (brands stay global, state is room-scoped via ratings)
       await base44.entities.GameRoom.create({
         room_code: code,
         host_email: userIdentity.id,
@@ -78,8 +83,14 @@ export default function CreateRoom() {
       // Store room code for session-scoped queries
       setCurrentRoomCode(code);
       setRoomCode(code);
-      toast.success("Room created!");
+      
+      // Invalidate queries to refresh UI
+      queryClient.invalidateQueries();
+      
+      toast.dismiss();
+      toast.success("✨ Fresh room created!");
     } catch (error) {
+      toast.dismiss();
       toast.error(error.message || "Failed to create room");
       setCreating(false);
     }
