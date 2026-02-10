@@ -48,6 +48,8 @@ export default function Rate() {
       setShowRating(airingBrand);
       setSelectedStars(0);
       setRatingTimer(120); // 2 minutes
+      // Navigate to Rate tab
+      window.location.hash = '#/Rate';
     }
   }, [airingBrand?.id]);
 

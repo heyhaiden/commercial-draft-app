@@ -55,9 +55,15 @@ export default function Leaderboard() {
     const userScores = {};
     allPicks.forEach(pick => {
       if (!userScores[pick.user_email]) {
-        userScores[pick.user_email] = { name: pick.user_name, score: 0 };
+        userScores[pick.user_email] = { name: pick.user_name, score: 0, picks: [] };
       }
       const brand = brandMap.get(pick.brand_id);
+      userScores[pick.user_email].picks.push({
+        brand_name: pick.brand_name,
+        points: brand?.points || 0,
+        aired: brand?.aired || false,
+        rating: brand?.average_rating || 0
+      });
       if (brand?.aired) {
         userScores[pick.user_email].score += brand.points || 0;
       }
@@ -189,13 +195,19 @@ export default function Leaderboard() {
                 <div className="w-12 flex items-center justify-center">
                   <p className="text-2xl font-black">{rank}</p>
                 </div>
-                <div className="flex items-center gap-1 text-green-400">
-                  <TrendingUp className="w-4 h-4" />
-                </div>
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center">
                   <span className="text-lg">{playerIcon}</span>
                 </div>
-                <p className="flex-1 font-bold">{isMe ? `You (${entry.name})` : entry.name}</p>
+                <div className="flex-1">
+                  <p className="font-bold">{isMe ? `You (${entry.name})` : entry.name}</p>
+                  <div className="flex gap-1 mt-1">
+                    {entry.picks?.map((pick, i) => (
+                      <div key={i} className="text-[10px] text-[#a4a498]" title={`${pick.brand_name}: ${pick.aired ? `${pick.rating}⭐ (${pick.points}pts)` : 'Not aired'}`}>
+                        {pick.aired ? `${pick.points}` : '—'}
+                      </div>
+                    ))}
+                  </div>
+                </div>
                 <div className="text-right">
                   <p className="text-2xl font-black text-[#f4c542]">{entry.score}</p>
                   <p className="text-[10px] text-[#a4a498]">POINTS</p>
