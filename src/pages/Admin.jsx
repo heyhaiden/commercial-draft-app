@@ -458,6 +458,7 @@ export default function Admin() {
                     brand_name: brand.brand_name,
                     stars: ratings[i],
                   });
+                  await new Promise(r => setTimeout(r, 100)); // Prevent rate limit
                 }
 
                 const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
@@ -487,6 +488,7 @@ export default function Admin() {
                     is_airing: false,
                   });
                 }
+                await new Promise(r => setTimeout(r, 150)); // Prevent rate limit
               }
 
               queryClient.invalidateQueries();
