@@ -325,86 +325,7 @@ export default function Admin() {
           )}
         </div>
 
-        {/* Scoring Simulation */}
-        <div className="rounded-2xl bg-blue-500/20 border border-blue-400/30 p-4 mb-4">
-          <h3 className="font-bold text-sm mb-2 text-blue-400">Test Scoring & Complete Game</h3>
-          <Button
-            onClick={async () => {
-              // 1. Stop any airing brands
-              const airing = roomBrandStates.filter(s => s.is_airing);
-              for (const state of airing) {
-                await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
-              }
 
-              // 2. Mark all brands as aired and generate scores
-              for (const brand of brands) {
-                // Clear existing ratings for this brand in this room
-                const existingRatings = await base44.entities.Rating.filter({ 
-                  brand_id: brand.id,
-                  room_code: currentRoomCode 
-                });
-                for (const r of existingRatings) {
-                  await base44.entities.Rating.delete(r.id);
-                }
-
-                // Create 3-5 random ratings
-                const numRatings = Math.floor(Math.random() * 3) + 3;
-                const ratings = [];
-                for (let i = 0; i < numRatings; i++) {
-                  const stars = Math.floor(Math.random() * 5) + 1;
-                  ratings.push(stars);
-                  await base44.entities.Rating.create({
-                    room_code: currentRoomCode,
-                    user_email: `sim_${Date.now()}_${i}@test.com`,
-                    brand_id: brand.id,
-                    brand_name: brand.brand_name,
-                    stars,
-                  });
-                }
-
-                const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-                const points = Math.round(avgRating * 20) - 10;
-
-                // Update or create room brand state
-                const existing = await base44.entities.RoomBrandState.filter({ 
-                  room_code: currentRoomCode, 
-                  brand_id: brand.id 
-                });
-                if (existing.length > 0) {
-                  await base44.entities.RoomBrandState.update(existing[0].id, {
-                    average_rating: Math.round(avgRating * 100) / 100,
-                    total_ratings: numRatings,
-                    points,
-                    aired: true,
-                    is_airing: false,
-                  });
-                } else {
-                  await base44.entities.RoomBrandState.create({
-                    room_code: currentRoomCode,
-                    brand_id: brand.id,
-                    brand_name: brand.brand_name,
-                    average_rating: Math.round(avgRating * 100) / 100,
-                    total_ratings: numRatings,
-                    points,
-                    aired: true,
-                    is_airing: false,
-                  });
-                }
-              }
-
-              queryClient.invalidateQueries();
-              toast.success("🎉 Game completed! All brands scored randomly.");
-              
-              // Navigate to leaderboard after a delay
-              setTimeout(() => {
-                navigate(createPageUrl("Leaderboard"));
-              }, 2000);
-            }}
-            className="w-full h-10 rounded-xl bg-blue-500/20 hover:bg-blue-500/30 text-blue-300 text-sm"
-          >
-            🎲 Complete Game with Random Scores
-          </Button>
-        </div>
 
         {/* Commercial Air Control */}
         <div className="rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 p-4">
@@ -505,8 +426,80 @@ export default function Admin() {
           </div>
         </div>
 
+        {/* Quick Score Unrated Ads */}
+        <div className="mt-6 mb-4">
+          <Button
+            onClick={async () => {
+              // Find all unrated ads
+              const unratedBrands = brands.filter(brand => {
+                const state = roomBrandStates.find(s => s.brand_id === brand.id);
+                return !state?.aired && !state?.is_airing;
+              });
+
+              if (unratedBrands.length === 0) {
+                toast.info("All ads have been rated!");
+                return;
+              }
+
+              // Stop any currently airing
+              const airing = roomBrandStates.filter(s => s.is_airing);
+              for (const state of airing) {
+                await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
+              }
+
+              // Score only unrated brands with hardcoded values
+              for (const brand of unratedBrands) {
+                const ratings = [4, 3, 5]; // Hardcoded ratings
+                for (let i = 0; i < ratings.length; i++) {
+                  await base44.entities.Rating.create({
+                    room_code: currentRoomCode,
+                    user_email: `player_${i}@test.com`,
+                    brand_id: brand.id,
+                    brand_name: brand.brand_name,
+                    stars: ratings[i],
+                  });
+                }
+
+                const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+                const points = Math.round(avgRating * 20) - 10;
+
+                const existing = await base44.entities.RoomBrandState.filter({ 
+                  room_code: currentRoomCode, 
+                  brand_id: brand.id 
+                });
+                if (existing.length > 0) {
+                  await base44.entities.RoomBrandState.update(existing[0].id, {
+                    average_rating: Math.round(avgRating * 100) / 100,
+                    total_ratings: 3,
+                    points,
+                    aired: true,
+                    is_airing: false,
+                  });
+                } else {
+                  await base44.entities.RoomBrandState.create({
+                    room_code: currentRoomCode,
+                    brand_id: brand.id,
+                    brand_name: brand.brand_name,
+                    average_rating: Math.round(avgRating * 100) / 100,
+                    total_ratings: 3,
+                    points,
+                    aired: true,
+                    is_airing: false,
+                  });
+                }
+              }
+
+              queryClient.invalidateQueries();
+              toast.success(`✅ Scored ${unratedBrands.length} unrated ads!`);
+            }}
+            className="w-full h-11 rounded-2xl bg-gradient-to-r from-green-500/30 to-emerald-500/30 hover:from-green-500/40 hover:to-emerald-500/40 text-green-300 font-bold border border-green-400/30"
+          >
+            ⚡ Score All Unrated Ads
+          </Button>
+        </div>
+
         {/* Close Game Button */}
-        <div className="mt-6 mb-6">
+        <div className="mb-6">
           <Button
             onClick={() => {
               if (confirm("Are you sure you want to close this game? This will delete the room and all players.")) {
