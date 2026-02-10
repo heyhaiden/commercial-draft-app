@@ -6,7 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { getRoomBrandStates } from "@/utils/brandState";
+import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function Rate() {
   const [showRulesPopup, setShowRulesPopup] = useState(false);

@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { base44 } from "@/api/base44Client";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { getCurrentRoomCode } from "@/components/utils/guestAuth";
 
 export default function GlobalAdListener() {

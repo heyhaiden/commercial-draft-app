@@ -4,7 +4,7 @@ import { X, Share2, Download, Check, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import html2canvas from "html2canvas";
 
 export default function SeasonScorecard({ show, onClose, playerData, brands }) {

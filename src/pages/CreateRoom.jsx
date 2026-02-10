@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { base44 } from "@/api/base44Client";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { getUserIdentity, setCurrentRoomCode } from "@/components/utils/guestAuth";
 import { ArrowLeft, Gamepad2, Share2, Timer, Users, Grid3x3, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";

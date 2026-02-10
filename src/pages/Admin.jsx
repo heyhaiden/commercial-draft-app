@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Play, Square, CheckCircle, ArrowLeft, Check } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { createPageUrl } from "@/utils";
+import { createPageUrl } from "@/components/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandCardSkeleton, StatCardSkeleton } from "@/components/common/LoadingSkeleton";
@@ -236,7 +236,11 @@ export default function Admin() {
 
   // Calculate room-scoped brand states
   const roomBrandStates = useMemo(() => {
-    if (!roomCode || !currentRoom) return brands;
+    if (!brands || brands.length === 0) return [];
+    if (!roomCode || !currentRoom) {
+      // Return brands with default state when room is not available
+      return brands.map(brand => ({ ...brand, is_airing: false, aired: false, average_rating: 0, total_ratings: 0, points: 0 }));
+    }
     return getRoomBrandStates(brands, allRatings, roomCode, currentRoom);
   }, [brands, allRatings, roomCode, currentRoom]);
 

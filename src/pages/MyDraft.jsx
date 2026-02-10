@@ -61,7 +61,14 @@ export default function MyDraft() {
       if (!user?.id || !roomCode) return [];
       // Fetch all picks for this room and filter client-side to handle guest IDs
       const allRoomPicks = await base44.entities.RoomDraftPick.filter({ room_code: roomCode });
-      return allRoomPicks.filter(pick => pick.user_email === user.id);
+      // Filter picks by user email - handle both exact match and potential variations
+      const filtered = allRoomPicks.filter(pick => {
+        // Exact match
+        if (pick.user_email === user.id) return true;
+        // Also check if user.id might be in a different format
+        return pick.user_email?.includes(user.id) || user.id?.includes(pick.user_email);
+      });
+      return filtered;
     },
     enabled: !!user?.id && !!roomCode,
   });

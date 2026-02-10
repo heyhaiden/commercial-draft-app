@@ -53,5 +53,8 @@ export function getRoomBrandState(brand, roomRatings, roomCode, room) {
  * @returns {Array} Brands with room-scoped state
  */
 export function getRoomBrandStates(brands, roomRatings, roomCode, room) {
+  if (!brands || !Array.isArray(brands)) return [];
+  if (!roomRatings) roomRatings = [];
+  if (!roomCode || !room) return brands.map(brand => ({ ...brand, is_airing: false, aired: false, average_rating: 0, total_ratings: 0, points: 0 }));
   return brands.map(brand => getRoomBrandState(brand, roomRatings, roomCode, room));
 }

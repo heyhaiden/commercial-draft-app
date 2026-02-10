@@ -4,7 +4,7 @@ import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAut
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Crown } from "lucide-react";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
-import { getRoomBrandStates } from "@/utils/brandState";
+import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function Leaderboard() {
   const [user, setUser] = useState(null);
