@@ -81,14 +81,14 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
 
             <div className="p-6">
               {/* Player Avatar */}
-              <div className="flex justify-center mb-4">
+              <div className="flex flex-col items-center mb-4">
                 <div className="relative">
                   <div className="w-24 h-24 rounded-full bg-gradient-to-br from-[#f4c542] to-[#d4a532] flex items-center justify-center text-4xl border-4 border-[#3d3d2e]">
                     {playerData.icon}
                   </div>
-                  <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-[#f4c542] border-2 border-[#2d2d1e]">
-                    <p className="text-[#2d2d1e] text-xs font-black">RANK #{playerData.rank}</p>
-                  </div>
+                </div>
+                <div className="mt-4 px-3 py-1 rounded-full bg-[#f4c542] border-2 border-[#2d2d1e]">
+                  <p className="text-[#2d2d1e] text-xs font-black">RANK #{playerData.rank}</p>
                 </div>
               </div>
 
@@ -134,16 +134,43 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               </div>
 
               {/* Share Button */}
-              <Button className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3">
-                <Share2 className="w-4 h-4 mr-2" />
-                Share to Story
-              </Button>
+               <Button 
+                 onClick={async () => {
+                   try {
+                     if (navigator.share) {
+                       await navigator.share({
+                         title: "CommercialDraft '26",
+                         text: `I scored ${totalScore} points in CommercialDraft '26! Rank: #${playerData.rank}`,
+                       });
+                     } else {
+                       navigator.clipboard.writeText(`I scored ${totalScore} points in CommercialDraft '26! Rank: #${playerData.rank}`);
+                     }
+                   } catch (err) {
+                     console.log("Share error:", err);
+                   }
+                 }}
+                 className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3">
+                 <Share2 className="w-4 h-4 mr-2" />
+                 Share to Story
+               </Button>
 
-              <div className="grid grid-cols-2 gap-3">
-                <Button variant="outline" className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white">
-                  <Download className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
+               <div className="grid grid-cols-2 gap-3">
+                 <Button 
+                   onClick={async () => {
+                     const html = document.querySelector('.max-w-md');
+                     if (html) {
+                       const canvas = await import('html2canvas').then(m => m.default(html));
+                       const link = document.createElement('a');
+                       link.href = canvas.toDataURL();
+                       link.download = 'scorecard.png';
+                       link.click();
+                     }
+                   }}
+                   variant="outline" 
+                   className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white">
+                   <Download className="w-4 h-4 mr-2" />
+                   Save
+                 </Button>
                 <Button 
                   variant="outline" 
                   className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white"
@@ -157,10 +184,10 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               </div>
 
               {/* Join Next */}
-              <div className="mt-6 p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
-                <p className="text-[#a4a498] text-xs mb-2">JOIN THE FUN</p>
-                <p className="text-white font-bold">CommercialDraft '25</p>
-              </div>
+               <div className="mt-6 p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
+                 <p className="text-[#a4a498] text-xs mb-2">JOIN THE FUN</p>
+                 <p className="text-white font-bold">CommercialDraft '26</p>
+               </div>
             </div>
           </motion.div>
         </motion.div>
