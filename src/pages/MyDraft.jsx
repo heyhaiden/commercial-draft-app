@@ -25,6 +25,7 @@ export default function MyDraft() {
     });
     setRoomCode(getCurrentRoomCode());
   }, []);
+  
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
     queryFn: () => base44.entities.Brand.list(),
