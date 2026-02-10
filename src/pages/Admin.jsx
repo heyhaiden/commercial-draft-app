@@ -9,7 +9,7 @@ import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandCardSkeleton, StatCardSkeleton } from "@/components/common/LoadingSkeleton";
-import { getRoomBrandStates } from "@/utils/brandState";
+import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function Admin() {
   const [user, setUser] = useState(null);

@@ -5,7 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
 import OnboardingTooltip from "@/components/common/OnboardingTooltip";
 import { motion } from "framer-motion";
-import { getRoomBrandStates } from "@/utils/brandState";
+import { getRoomBrandStates } from "@/components/utils/brandState";
 
 export default function MyDraft() {
   const [user, setUser] = useState(null);
