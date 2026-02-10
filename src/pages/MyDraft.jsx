@@ -10,7 +10,7 @@ export default function MyDraft() {
   const [user, setUser] = useState(null);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [failedImages, setFailedImages] = useState(new Set());
-  const roomCode = getCurrentRoomCode();
+  const [roomCode, setRoomCode] = useState(null);
 
   // Safe image error handler - no XSS
   const handleImageError = useCallback((brandId) => {
@@ -19,17 +19,18 @@ export default function MyDraft() {
 
   useEffect(() => {
     getUserIdentity(base44).then(setUser);
+    setRoomCode(getCurrentRoomCode());
   }, []);
 
   // Show onboarding after draft is complete (when user has picks)
   useEffect(() => {
-    if (myPicks.length > 0 && !picksLoading) {
+    if (myPicks && myPicks.length > 0 && !picksLoading) {
       const hasSeenPostDraftOnboarding = localStorage.getItem("hasSeenPostDraftOnboarding");
       if (!hasSeenPostDraftOnboarding) {
         setShowOnboarding(true);
       }
     }
-  }, [myPicks.length, picksLoading]);
+  }, [myPicks, picksLoading]);
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
