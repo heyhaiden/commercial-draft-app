@@ -57,12 +57,11 @@ export default function MyDraft() {
   // Use RoomDraftPick scoped to current room
   const { data: myPicks = [], isLoading: picksLoading } = useQuery({
     queryKey: ["myPicks", user?.id, roomCode],
-    queryFn: () => {
+    queryFn: async () => {
       if (!user?.id || !roomCode) return [];
-      return base44.entities.RoomDraftPick.filter({
-        user_email: user.id,
-        room_code: roomCode
-      });
+      // Fetch all picks for this room and filter client-side to handle guest IDs
+      const allRoomPicks = await base44.entities.RoomDraftPick.filter({ room_code: roomCode });
+      return allRoomPicks.filter(pick => pick.user_email === user.id);
     },
     enabled: !!user?.id && !!roomCode,
   });
