@@ -198,7 +198,7 @@ export default function Home() {
            transition={{ delay: 0.4 }}
            className="text-[#a4a498] text-center mb-8 max-w-xs text-sm"
          >
-           CommercialDraft '26 - The fantasy league for the world's most expensive ads.
+           The fantasy league for the world's most expensive ads.
          </motion.p>
 
         {/* Join Button */}
