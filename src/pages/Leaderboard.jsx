@@ -2,7 +2,9 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown } from "lucide-react";
+import { Crown, ClipboardList } from "lucide-react";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
 
 export default function Leaderboard() {
@@ -176,8 +178,15 @@ export default function Leaderboard() {
   return (
     <div className="min-h-screen bg-[#1d1d0e] text-white pb-24">
       <div className="max-w-md mx-auto px-4 py-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h1 className="text-2xl font-black">LIVE SCORING</h1>
+          <Link
+            to={createPageUrl("DraftRecap")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 text-[#a4a498] hover:text-white text-xs font-bold transition-colors"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            Draft Recap
+          </Link>
         </div>
 
 

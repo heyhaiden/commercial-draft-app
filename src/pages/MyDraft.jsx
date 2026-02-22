@@ -5,6 +5,9 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { BrandCardSkeleton } from "@/components/common/LoadingSkeleton";
 import OnboardingTooltip from "@/components/common/OnboardingTooltip";
 import { motion } from "framer-motion";
+import { Link } from "react-router-dom";
+import { createPageUrl } from "@/utils";
+import { ClipboardList } from "lucide-react";
 
 export default function MyDraft() {
   const [user, setUser] = useState(null);
@@ -105,6 +108,13 @@ export default function MyDraft() {
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-black">My Drafted Lineup</h1>
+          <Link
+            to={createPageUrl("DraftRecap")}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#4a4a3a]/40 border border-[#5a5a4a]/30 text-[#a4a498] hover:text-white text-xs font-bold transition-colors"
+          >
+            <ClipboardList className="w-3.5 h-3.5" />
+            Draft Recap
+          </Link>
         </div>
 
         {/* Status Banner */}

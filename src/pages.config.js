@@ -55,6 +55,7 @@ import Leaderboard from './pages/Leaderboard';
 import Lobby from './pages/Lobby';
 import MyDraft from './pages/MyDraft';
 import ProfileSetup from './pages/ProfileSetup';
+import DraftRecap from './pages/DraftRecap';
 import Rate from './pages/Rate';
 import RoomDraft from './pages/RoomDraft';
 import __Layout from './Layout.jsx';
@@ -63,6 +64,7 @@ import __Layout from './Layout.jsx';
 export const PAGES = {
     "Admin": Admin,
     "CreateRoom": CreateRoom,
+    "DraftRecap": DraftRecap,
     "Home": Home,
     "JoinGame": JoinGame,
     "Leaderboard": Leaderboard,
