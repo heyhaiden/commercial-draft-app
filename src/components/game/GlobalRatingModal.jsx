@@ -6,6 +6,7 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import ReactionBar from "@/components/game/ReactionBar";
 import {
   requestNotificationPermission,
   sendBrowserNotification,
@@ -258,6 +259,7 @@ export default function GlobalRatingModal() {
               ) : (
                 <div className="text-center">
                   <p className="text-green-400 font-bold mb-3">Rating submitted!</p>
+                  <ReactionBar />
                   <Button
                     onClick={() => {
                       setShowRating(null);

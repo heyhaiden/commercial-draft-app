@@ -4,6 +4,7 @@ import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAut
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { AnimatePresence, motion } from "framer-motion";
 import { Star, X, Info } from "lucide-react";
+import ReactionBar from "@/components/game/ReactionBar";
 
 
 export default function Rate() {
@@ -84,6 +85,7 @@ export default function Rate() {
                 <span className="text-green-400 text-sm font-bold">✓ RATED</span>
               )}
             </div>
+            {ratedIds.has(airingBrand.id) && <ReactionBar />}
           </div>
         )}
 
