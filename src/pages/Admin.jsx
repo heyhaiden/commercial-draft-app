@@ -1,13 +1,23 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { base44 } from "@/api/base44Client";
-import { getUserIdentity } from "@/components/utils/guestAuth";
+import { getUserIdentity, setCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Play, Square, CheckCircle, ArrowLeft } from "lucide-react";
+import { Play, Square, CheckCircle, ArrowLeft, FlaskConical, ChevronDown, ChevronUp, Users, Zap, RotateCcw, Eye } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { createPageUrl } from "@/utils";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { BrandCardSkeleton, StatCardSkeleton } from "@/components/common/LoadingSkeleton";
+
+const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+const TEST_PLAYERS = [
+  { name: "TurboTom", icon: "icon1" },
+  { name: "AdQueen", icon: "icon2" },
+  { name: "BrandBoss", icon: "icon3" },
+  { name: "PickMaster", icon: "icon4" },
+];
 
 export default function Admin() {
   const [user, setUser] = useState(null);
@@ -15,6 +25,8 @@ export default function Admin() {
   const [filter, setFilter] = useState("all");
   const [failedImages, setFailedImages] = useState(new Set());
   const [copied, setCopied] = useState(false);
+  const [showTestTools, setShowTestTools] = useState(false);
+  const [simProgress, setSimProgress] = useState(null);
 
   // Safe image error handler - no XSS
   const handleImageError = useCallback((brandId) => {
@@ -76,6 +88,12 @@ export default function Admin() {
   const { data: allRatings = [] } = useQuery({
     queryKey: ["allRatings", currentRoomCode],
     queryFn: () => base44.entities.Rating.filter({ room_code: currentRoomCode }),
+    enabled: !!currentRoomCode,
+  });
+
+  const { data: roomDraftPicks = [] } = useQuery({
+    queryKey: ["roomDraftPicks", currentRoomCode],
+    queryFn: () => base44.entities.RoomDraftPick.filter({ room_code: currentRoomCode }),
     enabled: !!currentRoomCode,
   });
 
@@ -425,78 +443,361 @@ export default function Admin() {
           </div>
         </div>
 
-        {/* Quick Score Unrated Ads */}
-        <div className="mt-6 mb-4">
-          <Button
-            onClick={async () => {
-              // Find all unrated ads
-              const unratedBrands = brands.filter(brand => {
-                const state = roomBrandStates.find(s => s.brand_id === brand.id);
-                return !state?.aired && !state?.is_airing;
-              });
-
-              if (unratedBrands.length === 0) {
-                toast.info("All ads have been rated!");
-                return;
-              }
-
-              // Stop any currently airing
-              const airing = roomBrandStates.filter(s => s.is_airing);
-              for (const state of airing) {
-                await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
-              }
-
-              // Score only unrated brands with hardcoded values
-              for (const brand of unratedBrands) {
-                const ratings = [4, 3, 5]; // Hardcoded ratings
-                for (let i = 0; i < ratings.length; i++) {
-                  await base44.entities.Rating.create({
-                    room_code: currentRoomCode,
-                    user_email: `player_${i}@test.com`,
-                    brand_id: brand.id,
-                    brand_name: brand.brand_name,
-                    stars: ratings[i],
-                  });
-                  await new Promise(r => setTimeout(r, 100)); // Prevent rate limit
-                }
-
-                const avgRating = ratings.reduce((a, b) => a + b, 0) / ratings.length;
-                const points = Math.round(avgRating * 20) - 10;
-
-                const existing = await base44.entities.RoomBrandState.filter({ 
-                  room_code: currentRoomCode, 
-                  brand_id: brand.id 
-                });
-                if (existing.length > 0) {
-                  await base44.entities.RoomBrandState.update(existing[0].id, {
-                    average_rating: Math.round(avgRating * 100) / 100,
-                    total_ratings: 3,
-                    points,
-                    aired: true,
-                    is_airing: false,
-                  });
-                } else {
-                  await base44.entities.RoomBrandState.create({
-                    room_code: currentRoomCode,
-                    brand_id: brand.id,
-                    brand_name: brand.brand_name,
-                    average_rating: Math.round(avgRating * 100) / 100,
-                    total_ratings: 3,
-                    points,
-                    aired: true,
-                    is_airing: false,
-                  });
-                }
-                await new Promise(r => setTimeout(r, 150)); // Prevent rate limit
-              }
-
-              queryClient.invalidateQueries();
-              toast.success(`✅ Scored ${unratedBrands.length} unrated ads!`);
-            }}
-            className="w-full h-11 rounded-2xl bg-gradient-to-r from-green-500/30 to-emerald-500/30 hover:from-green-500/40 hover:to-emerald-500/40 text-green-300 font-bold border border-green-400/30"
+        {/* Testing Tools Panel */}
+        <div className="mt-6 mb-6 rounded-2xl bg-[#4a4a3a]/20 border-2 border-dashed border-orange-500/40 overflow-hidden">
+          <button
+            onClick={() => setShowTestTools(!showTestTools)}
+            className="w-full p-4 flex items-center justify-between hover:bg-[#5a5a4a]/10 transition-colors"
           >
-            ⚡ Score All Unrated Ads
-          </Button>
+            <div className="flex items-center gap-3">
+              <FlaskConical className="w-5 h-5 text-orange-400" />
+              <div className="text-left">
+                <p className="font-bold text-orange-300">Testing Tools</p>
+                <p className="text-xs text-[#a4a498]">Simulate gameplay, create test data, view scorecard</p>
+              </div>
+            </div>
+            {showTestTools ? <ChevronUp className="w-5 h-5 text-[#a4a498]" /> : <ChevronDown className="w-5 h-5 text-[#a4a498]" />}
+          </button>
+
+          {showTestTools && (
+            <div className="p-4 pt-0 space-y-3">
+              {/* Progress indicator */}
+              {simProgress && (
+                <div className="rounded-xl bg-[#2d2d1e] border border-orange-500/30 p-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 rounded-full bg-orange-400 animate-pulse" />
+                    <p className="text-orange-300 text-sm font-bold">{simProgress.label}</p>
+                  </div>
+                  <div className="w-full h-2 bg-[#5a5a4a]/30 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-gradient-to-r from-orange-400 to-yellow-400 rounded-full transition-all duration-300"
+                      style={{ width: `${simProgress.percent}%` }}
+                    />
+                  </div>
+                  <p className="text-[#a4a498] text-xs mt-1">{simProgress.detail}</p>
+                </div>
+              )}
+
+              {/* Simulation status */}
+              <div className="grid grid-cols-4 gap-2">
+                {[
+                  { label: "Players", value: currentRoomPlayers.filter(p => p.user_email !== rooms[0]?.host_email).length, ok: currentRoomPlayers.filter(p => p.user_email !== rooms[0]?.host_email).length >= 2 },
+                  { label: "Picks", value: roomDraftPicks.length, ok: roomDraftPicks.length > 0 },
+                  { label: "Aired", value: roomBrandStates.filter(s => s.aired).length, ok: roomBrandStates.filter(s => s.aired).length === brands.length && brands.length > 0 },
+                  { label: "Brands", value: brands.length, ok: brands.length > 0 },
+                ].map(({ label, value, ok }) => (
+                  <div key={label} className={cn(
+                    "p-2 rounded-xl text-center border",
+                    ok ? "bg-green-500/10 border-green-500/30" : "bg-[#2d2d1e] border-[#5a5a4a]/20"
+                  )}>
+                    <p className={cn("text-lg font-black", ok ? "text-green-400" : "text-[#a4a498]")}>{value}</p>
+                    <p className="text-[9px] text-[#a4a498]">{label}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* One-click full simulation */}
+              <Button
+                onClick={async () => {
+                  if (!currentRoomCode) {
+                    toast.error("Create a room first");
+                    return;
+                  }
+
+                  try {
+                    const total = 4; // steps
+                    let step = 0;
+
+                    // Step 1: Create test players
+                    setSimProgress({ label: "Creating test players...", percent: 0, detail: "Adding 4 dummy players with profiles" });
+                    const existingPlayers = await base44.entities.Player.filter({ room_code: currentRoomCode });
+                    const nonHostPlayers = existingPlayers.filter(p => p.user_email !== user.id);
+
+                    if (nonHostPlayers.length < 4) {
+                      const needed = 4 - nonHostPlayers.length;
+                      for (let i = 0; i < needed; i++) {
+                        const tp = TEST_PLAYERS[nonHostPlayers.length + i] || TEST_PLAYERS[i];
+                        await base44.entities.Player.create({
+                          room_code: currentRoomCode,
+                          user_email: `test_${tp.name.toLowerCase()}@sim.com`,
+                          display_name: tp.name,
+                          icon: tp.icon,
+                          ready: true,
+                          turn_order: nonHostPlayers.length + i,
+                        });
+                        await delay(300);
+                      }
+                    }
+                    step++;
+                    setSimProgress({ label: "Creating draft picks...", percent: (step / total) * 100, detail: "Assigning 5 brands to each player" });
+
+                    // Step 2: Create draft picks (5 per player, no overlaps)
+                    const freshPlayers = await base44.entities.Player.filter({ room_code: currentRoomCode });
+                    const gamePlayers = freshPlayers.filter(p => p.user_email !== user.id);
+                    const existingPicks = await base44.entities.RoomDraftPick.filter({ room_code: currentRoomCode });
+
+                    if (existingPicks.length === 0) {
+                      const availableBrands = [...brands];
+                      // Shuffle brands for random assignment
+                      for (let i = availableBrands.length - 1; i > 0; i--) {
+                        const j = Math.floor(Math.random() * (i + 1));
+                        [availableBrands[i], availableBrands[j]] = [availableBrands[j], availableBrands[i]];
+                      }
+
+                      let pickNumber = 1;
+                      for (let round = 1; round <= 5; round++) {
+                        const order = round % 2 === 0 ? [...gamePlayers].reverse() : gamePlayers;
+                        for (const player of order) {
+                          const brandIdx = (pickNumber - 1) % availableBrands.length;
+                          const brand = availableBrands[brandIdx];
+                          if (!brand) continue;
+
+                          await base44.entities.RoomDraftPick.create({
+                            room_code: currentRoomCode,
+                            user_email: player.user_email,
+                            brand_id: brand.id,
+                            brand_name: brand.brand_name,
+                            pick_number: pickNumber,
+                            round,
+                          });
+                          await delay(200);
+                          availableBrands.splice(brandIdx, 1);
+                          pickNumber++;
+                        }
+                      }
+                    }
+                    step++;
+                    setSimProgress({ label: "Scoring all commercials...", percent: (step / total) * 100, detail: `Rating ${brands.length} brands with random scores` });
+
+                    // Step 3: Score all brands
+                    const latestPlayers = await base44.entities.Player.filter({ room_code: currentRoomCode });
+                    const ratingPlayers = latestPlayers.filter(p => p.user_email !== user.id);
+
+                    // Stop any currently airing
+                    const airing = roomBrandStates.filter(s => s.is_airing);
+                    for (const state of airing) {
+                      await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
+                    }
+
+                    const unscored = brands.filter(b => {
+                      const state = roomBrandStates.find(s => s.brand_id === b.id);
+                      return !state?.aired;
+                    });
+
+                    for (let i = 0; i < unscored.length; i++) {
+                      const brand = unscored[i];
+                      const starValues = [];
+
+                      for (const player of ratingPlayers) {
+                        const stars = Math.floor(Math.random() * 5) + 1;
+                        starValues.push(stars);
+                        await base44.entities.Rating.create({
+                          room_code: currentRoomCode,
+                          user_email: player.user_email,
+                          brand_id: brand.id,
+                          brand_name: brand.brand_name,
+                          stars,
+                        });
+                        await delay(200);
+                      }
+
+                      const avgRating = starValues.reduce((a, b) => a + b, 0) / starValues.length;
+                      const points = Math.round(avgRating * 20) - 10;
+
+                      const existing = await base44.entities.RoomBrandState.filter({
+                        room_code: currentRoomCode,
+                        brand_id: brand.id,
+                      });
+                      const stateData = {
+                        average_rating: Math.round(avgRating * 100) / 100,
+                        total_ratings: starValues.length,
+                        points,
+                        aired: true,
+                        is_airing: false,
+                      };
+                      if (existing.length > 0) {
+                        await base44.entities.RoomBrandState.update(existing[0].id, stateData);
+                      } else {
+                        await base44.entities.RoomBrandState.create({
+                          room_code: currentRoomCode,
+                          brand_id: brand.id,
+                          brand_name: brand.brand_name,
+                          ...stateData,
+                        });
+                      }
+
+                      setSimProgress({
+                        label: "Scoring all commercials...",
+                        percent: ((step + (i + 1) / unscored.length) / total) * 100,
+                        detail: `Scored ${i + 1}/${unscored.length}: ${brand.brand_name}`,
+                      });
+                    }
+                    step++;
+
+                    // Step 4: Navigate to leaderboard
+                    setSimProgress({ label: "Done! Redirecting...", percent: 100, detail: "Opening leaderboard with scorecard" });
+                    queryClient.invalidateQueries();
+                    setCurrentRoomCode(currentRoomCode);
+
+                    await new Promise(r => setTimeout(r, 800));
+                    setSimProgress(null);
+                    navigate(createPageUrl("Leaderboard"));
+                  } catch (err) {
+                    console.error("Simulation error:", err);
+                    toast.error("Simulation failed: " + (err.message || "Unknown error"));
+                    setSimProgress(null);
+                  }
+                }}
+                disabled={!!simProgress || !currentRoomCode}
+                className="w-full h-14 rounded-2xl bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white font-bold text-base"
+              >
+                <Zap className="w-5 h-5 mr-2" />
+                Simulate Full Game & View Scorecard
+              </Button>
+
+              <div className="grid grid-cols-2 gap-3">
+                {/* Add test players only */}
+                <Button
+                  onClick={async () => {
+                    if (!currentRoomCode) { toast.error("Create a room first"); return; }
+                    setSimProgress({ label: "Adding test players...", percent: 50, detail: "" });
+                    const existing = await base44.entities.Player.filter({ room_code: currentRoomCode });
+                    const nonHost = existing.filter(p => p.user_email !== user.id);
+                    const needed = Math.max(0, 4 - nonHost.length);
+                    for (let i = 0; i < needed; i++) {
+                      const tp = TEST_PLAYERS[nonHost.length + i] || TEST_PLAYERS[i];
+                      await base44.entities.Player.create({
+                        room_code: currentRoomCode,
+                        user_email: `test_${tp.name.toLowerCase()}@sim.com`,
+                        display_name: tp.name,
+                        icon: tp.icon,
+                        ready: true,
+                        turn_order: nonHost.length + i,
+                      });
+                      await delay(300);
+                    }
+                    queryClient.invalidateQueries();
+                    setSimProgress(null);
+                    toast.success(`Added ${needed} test players`);
+                  }}
+                  disabled={!!simProgress || !currentRoomCode}
+                  variant="outline"
+                  className="h-11 rounded-2xl border-orange-500/30 text-orange-300 hover:bg-orange-500/10"
+                >
+                  <Users className="w-4 h-4 mr-2" />
+                  Add Players
+                </Button>
+
+                {/* Score all unrated ads */}
+                <Button
+                  onClick={async () => {
+                    if (!currentRoomCode) { toast.error("Create a room first"); return; }
+                    const unrated = brands.filter(b => {
+                      const state = roomBrandStates.find(s => s.brand_id === b.id);
+                      return !state?.aired && !state?.is_airing;
+                    });
+                    if (unrated.length === 0) { toast.info("All ads already scored"); return; }
+
+                    setSimProgress({ label: "Scoring ads...", percent: 0, detail: "" });
+                    const airing = roomBrandStates.filter(s => s.is_airing);
+                    for (const state of airing) {
+                      await base44.entities.RoomBrandState.update(state.id, { is_airing: false, aired: true });
+                    }
+
+                    for (let i = 0; i < unrated.length; i++) {
+                      const brand = unrated[i];
+                      const stars = [
+                        Math.floor(Math.random() * 5) + 1,
+                        Math.floor(Math.random() * 5) + 1,
+                        Math.floor(Math.random() * 5) + 1,
+                      ];
+                      for (let j = 0; j < stars.length; j++) {
+                        await base44.entities.Rating.create({
+                          room_code: currentRoomCode,
+                          user_email: `scorer_${j}@sim.com`,
+                          brand_id: brand.id,
+                          brand_name: brand.brand_name,
+                          stars: stars[j],
+                        });
+                        await delay(200);
+                      }
+                      const avg = stars.reduce((a, b) => a + b, 0) / stars.length;
+                      const pts = Math.round(avg * 20) - 10;
+                      const existing = await base44.entities.RoomBrandState.filter({ room_code: currentRoomCode, brand_id: brand.id });
+                      const data = { average_rating: Math.round(avg * 100) / 100, total_ratings: 3, points: pts, aired: true, is_airing: false };
+                      if (existing.length > 0) {
+                        await base44.entities.RoomBrandState.update(existing[0].id, data);
+                      } else {
+                        await base44.entities.RoomBrandState.create({ room_code: currentRoomCode, brand_id: brand.id, brand_name: brand.brand_name, ...data });
+                      }
+                      setSimProgress({ label: "Scoring ads...", percent: ((i + 1) / unrated.length) * 100, detail: `${i + 1}/${unrated.length}: ${brand.brand_name}` });
+                    }
+                    queryClient.invalidateQueries();
+                    setSimProgress(null);
+                    toast.success(`Scored ${unrated.length} ads`);
+                  }}
+                  disabled={!!simProgress || !currentRoomCode}
+                  variant="outline"
+                  className="h-11 rounded-2xl border-green-500/30 text-green-300 hover:bg-green-500/10"
+                >
+                  <Zap className="w-4 h-4 mr-2" />
+                  Score All Ads
+                </Button>
+
+                {/* View scorecard */}
+                <Button
+                  onClick={() => {
+                    setCurrentRoomCode(currentRoomCode);
+                    navigate(createPageUrl("Leaderboard"));
+                  }}
+                  disabled={!currentRoomCode}
+                  variant="outline"
+                  className="h-11 rounded-2xl border-blue-500/30 text-blue-300 hover:bg-blue-500/10"
+                >
+                  <Eye className="w-4 h-4 mr-2" />
+                  View Leaderboard
+                </Button>
+
+                {/* Reset game data */}
+                <Button
+                  onClick={async () => {
+                    if (!confirm("Reset all game data? This clears players, picks, ratings, and brand states for this room.")) return;
+                    if (!currentRoomCode) return;
+                    setSimProgress({ label: "Resetting game data...", percent: 30, detail: "Deleting players, picks, ratings..." });
+
+                    const [players, picks, ratings, states] = await Promise.all([
+                      base44.entities.Player.filter({ room_code: currentRoomCode }),
+                      base44.entities.RoomDraftPick.filter({ room_code: currentRoomCode }),
+                      base44.entities.Rating.filter({ room_code: currentRoomCode }),
+                      base44.entities.RoomBrandState.filter({ room_code: currentRoomCode }),
+                    ]);
+
+                    const deletes = [
+                      ...players.filter(p => p.user_email !== user.id).map(p => base44.entities.Player.delete(p.id)),
+                      ...picks.map(p => base44.entities.RoomDraftPick.delete(p.id)),
+                      ...ratings.map(r => base44.entities.Rating.delete(r.id)),
+                      ...states.map(s => base44.entities.RoomBrandState.delete(s.id)),
+                    ];
+
+                    setSimProgress({ label: "Resetting game data...", percent: 60, detail: `Deleting ${deletes.length} records...` });
+                    await Promise.all(deletes);
+
+                    queryClient.invalidateQueries();
+                    setSimProgress(null);
+                    toast.success("Game data reset. Room preserved.");
+                  }}
+                  disabled={!!simProgress || !currentRoomCode}
+                  variant="outline"
+                  className="h-11 rounded-2xl border-red-500/30 text-red-300 hover:bg-red-500/10"
+                >
+                  <RotateCcw className="w-4 h-4 mr-2" />
+                  Reset Data
+                </Button>
+              </div>
+
+              <p className="text-[#a4a498] text-[10px] text-center">Testing tools create simulated data. Use &quot;Reset Data&quot; to clean up.</p>
+            </div>
+          )}
         </div>
 
         {/* Close Game Button */}
