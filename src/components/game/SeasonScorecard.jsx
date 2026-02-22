@@ -1,17 +1,20 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Share2, Download } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { toast } from "sonner";
 
 export default function SeasonScorecard({ show, onClose, playerData, brands }) {
   const navigate = useNavigate();
-  
+  const modalRef = useRef(null);
+  const rafIdRef = useRef(null);
+  const [isSaving, setIsSaving] = useState(false);
+
   useEffect(() => {
     if (show) {
-      // Football confetti
       const duration = 3000;
       const end = Date.now() + duration;
 
@@ -34,11 +37,17 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
         });
 
         if (Date.now() < end) {
-          requestAnimationFrame(frame);
+          rafIdRef.current = requestAnimationFrame(frame);
         }
       };
-      frame();
+      rafIdRef.current = requestAnimationFrame(frame);
     }
+
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+    };
   }, [show]);
 
   if (!playerData) return null;
@@ -63,6 +72,7 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
           className="fixed inset-0 z-[100] flex items-center justify-center px-4 bg-black/90"
         >
           <motion.div
+            ref={modalRef}
             initial={{ scale: 0.9, y: 20 }}
             animate={{ scale: 1, y: 0 }}
             exit={{ scale: 0.9, y: 20 }}
@@ -134,46 +144,59 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               </div>
 
               {/* Share Button */}
-               <Button 
-                 onClick={async () => {
-                   try {
-                     if (navigator.share) {
-                       await navigator.share({
-                         title: "CommercialDraft '26",
-                         text: `I scored ${totalScore} points in CommercialDraft '26! Rank: #${playerData.rank}`,
-                       });
-                     } else {
-                       navigator.clipboard.writeText(`I scored ${totalScore} points in CommercialDraft '26! Rank: #${playerData.rank}`);
-                     }
-                   } catch (err) {
-                     console.log("Share error:", err);
-                   }
-                 }}
-                 className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3">
-                 <Share2 className="w-4 h-4 mr-2" />
-                 Share to Story
-               </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    if (navigator.share) {
+                      await navigator.share({
+                        title: "CommercialDraft '26",
+                        text: `I scored ${totalScore} points in CommercialDraft '26! Rank: #${playerData.rank}`,
+                      });
+                    } else {
+                      await navigator.clipboard.writeText(`I scored ${totalScore} points in CommercialDraft '26! Rank: #${playerData.rank}`);
+                      toast.success("Copied to clipboard!");
+                    }
+                  } catch (err) {
+                    if (err.name !== "AbortError") {
+                      toast.error("Unable to share");
+                    }
+                  }
+                }}
+                className="w-full h-14 rounded-[24px] bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-base mb-3"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share to Story
+              </Button>
 
-               <div className="grid grid-cols-2 gap-3">
-                 <Button 
-                   onClick={async () => {
-                     const { default: html2canvas } = await import('html2canvas');
-                     const modal = document.querySelector('[class*="max-w-md"][class*="rounded-3xl"]');
-                     if (modal) {
-                       const canvas = await html2canvas(modal, { backgroundColor: '#1d1d0e' });
-                       const link = document.createElement('a');
-                       link.href = canvas.toDataURL();
-                       link.download = `CommercialDraft-Scorecard-${playerData.displayName}-2026.png`;
-                       link.click();
-                     }
-                   }}
-                   variant="outline" 
-                   className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white">
-                   <Download className="w-4 h-4 mr-2" />
-                   Save
-                 </Button>
-                <Button 
-                  variant="outline" 
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  onClick={async () => {
+                    try {
+                      setIsSaving(true);
+                      const { default: html2canvas } = await import('html2canvas');
+                      if (modalRef.current) {
+                        const canvas = await html2canvas(modalRef.current, { backgroundColor: '#1d1d0e' });
+                        const safeName = (playerData.displayName || "Player").replace(/[^a-zA-Z0-9_-]/g, "_");
+                        const link = document.createElement('a');
+                        link.href = canvas.toDataURL();
+                        link.download = `CommercialDraft-Scorecard-${safeName}-2026.png`;
+                        link.click();
+                      }
+                    } catch (err) {
+                      toast.error("Failed to save scorecard");
+                    } finally {
+                      setIsSaving(false);
+                    }
+                  }}
+                  disabled={isSaving}
+                  variant="outline"
+                  className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  {isSaving ? "Saving..." : "Save"}
+                </Button>
+                <Button
+                  variant="outline"
                   className="h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white"
                   onClick={() => {
                     onClose();
@@ -185,10 +208,10 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
               </div>
 
               {/* Join Next */}
-               <div className="mt-6 p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
-                 <p className="text-[#a4a498] text-xs mb-2">JOIN THE FUN</p>
-                 <p className="text-white font-bold">CommercialDraft '26</p>
-               </div>
+              <div className="mt-6 p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
+                <p className="text-[#a4a498] text-xs mb-2">JOIN THE FUN</p>
+                <p className="text-white font-bold">CommercialDraft '26</p>
+              </div>
             </div>
           </motion.div>
         </motion.div>

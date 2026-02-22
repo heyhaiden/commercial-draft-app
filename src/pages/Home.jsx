@@ -192,14 +192,14 @@ export default function Home() {
         </motion.h1>
 
         {/* Subtitle */}
-         <motion.p
-           initial={{ opacity: 0 }}
-           animate={{ opacity: 1 }}
-           transition={{ delay: 0.4 }}
-           className="text-[#a4a498] text-center mb-8 max-w-xs text-sm"
-         >
-           The fantasy league for the world's most expensive ads.
-         </motion.p>
+        <motion.p
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+          className="text-[#a4a498] text-center mb-8 max-w-xs text-sm"
+        >
+          The fantasy league for the world's most expensive ads.
+        </motion.p>
 
         {/* Join Button */}
         <motion.div
