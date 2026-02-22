@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -6,19 +6,26 @@ import { AnimatePresence, motion } from "framer-motion";
 import { Star, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import {
+  requestNotificationPermission,
+  sendBrowserNotification,
+  playAlertSound,
+} from "@/lib/notifications";
 
 export default function GlobalRatingModal() {
   const [user, setUser] = useState(null);
   const [showRating, setShowRating] = useState(null);
+  const [hasRated, setHasRated] = useState(false);
   const [selectedStars, setSelectedStars] = useState(0);
   const [ratingTimer, setRatingTimer] = useState(null);
+  const notifiedBrandRef = useRef(null);
   const queryClient = useQueryClient();
   const roomCode = getCurrentRoomCode();
 
   useEffect(() => {
     getUserIdentity(base44).then(async (identity) => {
       setUser(identity);
-      // Check if user is admin - they don't participate in ratings
+      if (roomCode) requestNotificationPermission();
       if (!identity.isGuest) {
         try {
           const fullUser = await base44.auth.me();
@@ -30,7 +37,7 @@ export default function GlobalRatingModal() {
         }
       }
     });
-  }, []);
+  }, [roomCode]);
 
   const { data: brands = [] } = useQuery({
     queryKey: ["brands"],
@@ -72,7 +79,18 @@ export default function GlobalRatingModal() {
     if (airingBrand && !ratedIds.has(airingBrand.id) && !showRating) {
       setShowRating(airingBrand);
       setSelectedStars(0);
-      // Calculate time remaining based on air_started_at
+      setHasRated(false);
+
+      // Alert the user
+      if (notifiedBrandRef.current !== airingBrand.id) {
+        notifiedBrandRef.current = airingBrand.id;
+        playAlertSound();
+        sendBrowserNotification(
+          `🔴 ${airingBrand.brand_name} is airing!`,
+          "Tap to rate this commercial now."
+        );
+      }
+
       if (airingState?.air_started_at) {
         const startTime = new Date(airingState.air_started_at).getTime();
         const now = Date.now();
@@ -162,9 +180,7 @@ export default function GlobalRatingModal() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["myRatings"] });
       queryClient.invalidateQueries({ queryKey: ["roomBrandStates"] });
-      setShowRating(null);
-      setSelectedStars(0);
-      setRatingTimer(null);
+      setHasRated(true);
     },
   });
 
@@ -222,23 +238,43 @@ export default function GlobalRatingModal() {
                 ))}
               </div>
 
-              <Button
-                onClick={() => rateMutation.mutate({ brandId: showRating.id, stars: selectedStars })}
-                disabled={selectedStars === 0 || rateMutation.isPending}
-                className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30"
-              >
-                Submit Rating ▶
-              </Button>
+              {!hasRated ? (
+                <>
+                  <Button
+                    onClick={() => rateMutation.mutate({ brandId: showRating.id, stars: selectedStars })}
+                    disabled={selectedStars === 0 || rateMutation.isPending}
+                    className="w-full h-14 rounded-2xl bg-gradient-to-r from-[#f4c542] to-[#d4a532] hover:from-[#e4b532] hover:to-[#c49522] text-[#2d2d1e] font-bold text-lg disabled:opacity-30"
+                  >
+                    Submit Rating ▶
+                  </Button>
 
-              <div className="mt-4 text-center">
-                <p className="text-[#a4a498] text-xs">TIME REMAINING</p>
-                <p className={`text-lg font-bold ${ratingTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
-                  {ratingTimer !== null ? `${Math.floor(ratingTimer / 60)}:${String(ratingTimer % 60).padStart(2, '0')}` : '2:00'}
-                </p>
-              </div>
+                  <div className="mt-4 text-center">
+                    <p className="text-[#a4a498] text-xs">TIME REMAINING</p>
+                    <p className={`text-lg font-bold ${ratingTimer <= 10 ? 'text-red-400 animate-pulse' : 'text-[#f4c542]'}`}>
+                      {ratingTimer !== null ? `${Math.floor(ratingTimer / 60)}:${String(ratingTimer % 60).padStart(2, '0')}` : '2:00'}
+                    </p>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center">
+                  <p className="text-green-400 font-bold mb-3">Rating submitted!</p>
+                  <Button
+                    onClick={() => {
+                      setShowRating(null);
+                      setSelectedStars(0);
+                      setRatingTimer(null);
+                      setHasRated(false);
+                    }}
+                    variant="outline"
+                    className="mt-3 w-full h-11 rounded-2xl bg-[#3d3d2e] border-[#5a5a4a]/30 text-white"
+                  >
+                    Close
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {!ratedIds.has(showRating.id) && (
+            {!hasRated && !ratedIds.has(showRating.id) && (
               <button
                 onClick={() => {
                   setShowRating(null);
