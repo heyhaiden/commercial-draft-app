@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Share2, Download } from "lucide-react";
+import { X, Share2, Download, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import confetti from "canvas-confetti";
 import { useNavigate } from "react-router-dom";
@@ -207,11 +207,18 @@ export default function SeasonScorecard({ show, onClose, playerData, brands }) {
                 </Button>
               </div>
 
-              {/* Join Next */}
-              <div className="mt-6 p-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-center">
-                <p className="text-[#a4a498] text-xs mb-2">JOIN THE FUN</p>
-                <p className="text-white font-bold">CommercialDraft '26</p>
-              </div>
+              {/* Play Again */}
+              <Button
+                onClick={() => {
+                  onClose();
+                  navigate(createPageUrl("CreateRoom"));
+                }}
+                variant="outline"
+                className="w-full h-12 mt-4 rounded-2xl bg-[#4a4a3a]/20 border border-[#5a5a4a]/30 text-white hover:bg-[#5a5a4a]/30 font-bold"
+              >
+                <RotateCcw className="w-4 h-4 mr-2" />
+                Host New Game
+              </Button>
             </div>
           </motion.div>
         </motion.div>

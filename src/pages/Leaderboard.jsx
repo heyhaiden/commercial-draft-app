@@ -2,12 +2,14 @@ import React, { useState, useEffect, useMemo } from "react";
 import { base44 } from "@/api/base44Client";
 import { getUserIdentity, getCurrentRoomCode } from "@/components/utils/guestAuth";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Crown, ClipboardList } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Crown, ClipboardList, RotateCcw } from "lucide-react";
+import { Link, useNavigate } from "react-router-dom";
 import { createPageUrl } from "@/utils";
+import { Button } from "@/components/ui/button";
 import SeasonScorecard from "@/components/game/SeasonScorecard";
 
 export default function Leaderboard() {
+  const navigate = useNavigate();
   const [user, setUser] = useState(null);
   const [showScorecard, setShowScorecard] = useState(false);
   const [hasShownScorecard, setHasShownScorecard] = useState(false);
@@ -190,6 +192,16 @@ export default function Leaderboard() {
         </div>
 
 
+
+        {isGameComplete && (
+          <Button
+            onClick={() => navigate(createPageUrl("CreateRoom"))}
+            className="w-full h-12 rounded-2xl bg-gradient-to-r from-[#f4c542]/20 to-[#d4a532]/20 hover:from-[#f4c542]/30 hover:to-[#d4a532]/30 text-[#f4c542] font-bold border border-[#f4c542]/30 mb-6"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            Host New Game
+          </Button>
+        )}
 
         {/* Top 3 Podium */}
         {hasAnyRatings && leaderboard.length >= 3 && (
